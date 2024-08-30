@@ -86,6 +86,8 @@
         uploader.disabled = false;
         if(!!uploader.value){
           await recognize()
+        }else{
+          board.value = "";
         }
       };
       uploader.addEventListener('change', recognize);
