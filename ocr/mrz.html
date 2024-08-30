@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="./tesseract.min.js"></script>
+  </head>
+  <body style="width: 90%;margin: 0 auto;">
+    <h1>MRZ</h1>
+    <div>
+      <input type="file" id="uploader">
+      <select id="select-model">
+        <option value="mrz_int" selected>MRZ(fast)</option>
+        <option value="mrz">MRZ(best)</option>
+        <option value="ocrb_int">OCRB(small)</option>
+        <option value="ocrb">OCRB(best)</option>
+      </select>
+    </div>
+    <textarea id="board" readonly rows="8" cols="50">Upload an image file</textarea>
+    <img id="imgInput" style="max-width:500px;"><br>
+    <pre id="data" readonly rows="8" cols="100">Wait for Upload</pre>
+    <div>ตัวอย่างไว้ทดสอบ OCR หนังสือเดินทาง <a href="./img/pass1.png">1</a>, <a href="./img/pass2.jpg">2</a> </div>
+    <a href="./">Back Home</a>
+
+    <script type="module">
+      import { detect, parse } from './parseMRZ.js';
+      const { createWorker } = Tesseract;
+      const worker = await createWorker("ocrb", 1, {
+        langPath: './lang',
+        corePath: './tesseract.js-core',
+        workerPath: "./worker.min.js",
+        logger: m => console.log(m),
+      });
+      const uploader = document.getElementById('uploader');
+      const selModel = document.getElementById('select-model');
+      const board = document.getElementById('board');
+
+      let pdf;
+      const recognize = async () => {
+        const files = uploader.files
+        board.value = "Wait ...";
+        document.getElementById("imgInput").src = URL.createObjectURL(files[0]);
+        const res = await worker.recognize(files[0],{pdfTitle: "Example PDF"},{pdf: true});
+        pdf = res.data.pdf;
+        const text = res.data.text;
+        board.value = text;
+        const detection = detect(text);
+        try{
+            document.getElementById("data").innerText = JSON.stringify(parse(detection),null,4) 
+        }catch(e){
+            document.getElementById("data").innerText = JSON.stringify({error:"Not support"},null,4) 
+        }
+      };
+      const changeModel = async () => {
+        board.value = "Wait ...";
+        uploader.disabled = true;
+        await worker.reinitialize(selModel.value)
+        uploader.disabled = false;
+        if(!!uploader.value){
+          await recognize()
+        }
+      };
+      uploader.addEventListener('change', recognize);
+      selModel.addEventListener('change', changeModel);
+    </script>
+  </body>
+</html>

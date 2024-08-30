@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR demo by Oom</title>
+</head>
+<body style="width: 90%;margin: 0 auto;">
+    <h1>OCR</h1>
+    <p>    ตัวอย่างการทำ OCR บน เบราว์เซอร์ด้วย tesseract.js สามารถใช้ JavaScript ตรงๆโดยไม่ต้องใช้ Python เหมือนแบบอื่นๆ 
+        และมีความแม่นยำสูง ข้อดีคือไม่โหลดเซิร์ฟเวอร์ ข้อเสียคือไฟล์โมเดลแบบ best ขนาดเกิน 10MB 
+        ตอนนี้มีโปรแกรม demo สำหรับการ OCR หนังสือเดินทางกับเอกสารทั่วไป จะใช้โมเดลแบบต่างๆในการทดสอบ 
+    </p>
+    <i>
+        โค้ดเขียนแบบง่ายๆสำหรับการนำเสนอ ก่อนใช้จริงควรมีการปรับปรุงให้ดียิ่งขึ้น
+    </i>
+    <h2><a href="./mrz.html">MRZ</a></h2> 
+    <p>จากการทดสอบ OCR หนังสือเดินทางของโปรเจ็ก JOBS ไม่ค่อยแม่นยำผิดพลาดเกือบทุกจุด ปัญหาคือ ต้นฉบับก็ไม่ค่อยชัด 
+        ถึงแม้เอกสารจะชัดเจนก็ตาม แต่ละประเทศมีรูปแบบพื้นหลังและฟอนต์ต่างกันไป ถ้าจะให้แม่นยำเหมือนเครื่องอ่านที่สนามบินต้องอ่านจาก 
+        Machine Readable Zone (MRZ) 
+    <div>
+        <img src="./img/mrz.png" alt="" style="max-width:800px;">
+    </div>
+    <h3>โปรแกรมตัวอย่าง</h3>
+    <p>
+    ตัวอย่างนี้ใช้โมเดลที่เทรนมาสำหรับอ่าน MRZ โดยเฉพาะ 
+        เมื่อ OCR ได้ข้อความจะไปผ่าน parser ได้ JSON ออกมาใช้งาน 
+        ส่วน parser ยังต้องปรับปรุงให้ดีกว่านี้ ยังไม่ได้ทดสอบกับหนังสือเดินทางของไทยและเพื่อนบ้าน
+    </p>
+    <div>
+        <img src="./img/mrz_fast.png" alt="">
+    </div>
+
+    <h2><a href="./pdf.html">Image to PDF(text layer) </a></h2> 
+    <p>
+        <h3>โปรแกรมตัวอย่าง</h3>
+        OCR ภาพแปลงเป็น PDF แบบมีข้อความบนภาพ ใช้
+        <a href="https://tesseract-ocr.github.io/tessdoc/Data-Files#data-files-for-version-400-november-29-2016">โมเดลภาษามาตรฐาน</a> ของ tesseract  ควรเลือกใช้โมเดลให้ตรงกับภาษา ภาพด้านล่างเป็นตัวอย่าง OCR ภาษาพม่าผสมอังกฤษ
+        แล้วแปลงเป็น PDF แบบมี text layer ทำการก็อปปี้ไปใส่ใน VS Code
+    </p>
+    
+    <div><img src="./img/ocr_output_mya_eng.png" alt=""></div>
+    
+    <br>
+    <h2>Misc</h2>
+    <ul>
+        <li><a href="https://outline.frappet.synology.me/s/ocr">เอกสาร OCR ใน outline</a></li>        
+    </ul>
+
+</body>
+</html>

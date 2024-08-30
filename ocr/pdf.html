@@ -1,0 +1,96 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="./tesseract.min.js"></script>
+  </head>
+  <body style="width: 90%;margin: 0 auto;">
+    <h1>Image to PDF</h1>
+    <div>
+      <input type="file" id="uploader">
+      <button id="download-pdf" disabled="true">Download PDF</button>
+      <select id="select-model">
+        <option value="eng" selected>English(best)</option>
+        <option value="tha+eng">Thai+English(best)</option>
+        <option value="eng+tha">English+Thai(best)</option>
+        <option value="tha">Thai(best)</option>
+        <option value="mya+eng">Burmese+English(best)</option>
+        <option value="mya">Burmese(best)</option>
+        <option value="lao+eng">Lao+English(best)</option>
+        <option value="lao">Lao(best)</option>
+      </select>
+    </div>
+    <textarea id="board" readonly rows="8" cols="50">Upload an image file</textarea>
+    <img id="imgInput" style="max-width:500px;"><br>
+    <div>
+      ตัวอย่างไว้ทดสอบ OCR ทั่วไป
+      <a href="./img/ocr_thai.png">ไทย</a>, 
+      <a href="./img/ocr_lao.png">ลาว</a>,
+      <a href="./img/ocr_eng.png">ลาว อังกฤษ</a>, 
+      <a href="./img/ocr_mya_eng.png">พม่า อังกฤษ</a>
+    </div>
+    <a href="./">Back Home</a>
+
+    <script type="module">
+      //see https://github.com/naptha/tesseract.js/blob/master/docs/api.md
+      const { createWorker } = Tesseract;
+      const worker = await createWorker("eng", 3, {
+        langPath: './lang',
+        corePath: './tesseract.js-core',
+        workerPath: "./worker.min.js",
+        logger: m => console.log(m),
+      });
+
+      // await worker.setParameters({
+      //   preserve_interword_spaces: 0
+      // });
+      
+      const uploader = document.getElementById('uploader');
+      const dlBtn = document.getElementById('download-pdf');
+      const selModel = document.getElementById('select-model');
+      const board = document.getElementById('board');
+      let pdf;
+      const recognize = async () => {
+        const files = uploader.files
+        board.value = "Wait ...";
+        document.getElementById("imgInput").src = URL.createObjectURL(files[0]);
+        const res = await worker.recognize(files[0],{pdfTitle: "Example PDF"},{pdf: true});
+        pdf = res.data.pdf;
+        const text = res.data.text;
+        
+        board.value = text;
+        dlBtn.disabled = false;
+      };
+      const downloadPDF = async () => {
+        const filename = 'tesseract-ocr-result.pdf';
+        const blob = new Blob([new Uint8Array(pdf)], { type: 'application/pdf' });
+        if (navigator.msSaveBlob) {
+          // IE 10+
+          navigator.msSaveBlob(blob, filename);
+        } else {
+          const link = document.createElement('a');
+          if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+      };
+      const changeModel = async () => {
+        board.value = "Wait ...";
+        uploader.disabled = true;
+        await worker.reinitialize(selModel.value)
+        uploader.disabled = false;
+        if(!!uploader.value){
+          await recognize()
+        }
+      };
+      uploader.addEventListener('change', recognize);
+      dlBtn.addEventListener('click', downloadPDF);
+      selModel.addEventListener('change', changeModel);
+    </script>
+  </body>
+</html>
