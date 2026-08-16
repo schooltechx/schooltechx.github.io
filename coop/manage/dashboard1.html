@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด | Executive Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f6efe4;
+    --panel:#ffffff;
+    --panel-border:#ece2d2;
+    --ink:#3a3126;
+    --ink-soft:#7a6f60;
+    --header-a:#a8402a;
+    --header-b:#dd8a35;
+    --accent-orange:#e08e2b;
+    --accent-blue:#2f6fb0;
+    --accent-teal:#1f8f7a;
+    --accent-red:#b23b3b;
+    --accent-purple:#6f4fa8;
+    --tab-active-a:#c85a2b;
+    --tab-active-b:#e08e2b;
+    --radius-l:18px;
+    --radius-m:12px;
+    --shadow:0 2px 10px rgba(60,40,20,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Noto Sans Thai","Sarabun",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 20px 60px;}
+
+  /* ---------- Header ---------- */
+  .header{
+    background:linear-gradient(120deg,var(--header-a),var(--header-b));
+    border-radius:var(--radius-l);
+    padding:16px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    color:#fff;
+    box-shadow:0 6px 18px rgba(168,64,42,0.25);
+  }
+  .header-left{display:flex;align-items:center;gap:12px;}
+  .logo-badge{
+    width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.18);
+    display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;
+  }
+  .header-title h1{margin:0;font-size:1.05rem;font-weight:700;}
+  .header-title p{margin:2px 0 0;font-size:.78rem;opacity:.92;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .fy-badge{
+    background:rgba(255,255,255,0.9);color:#8a4a1e;font-weight:700;
+    padding:1px 9px;border-radius:20px;font-size:.72rem;
+  }
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .pill{
+    display:flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,0.16);
+    border:1px solid rgba(255,255,255,0.35);
+    padding:7px 14px;border-radius:20px;font-size:.8rem;font-weight:600;white-space:nowrap;
+  }
+  .btn-ai{
+    background:#f5a623;color:#5c3200;border:none;
+    padding:8px 16px;border-radius:20px;font-weight:700;font-size:.8rem;
+    display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+  }
+  .btn-ai:hover{filter:brightness(1.05);}
+
+  /* ---------- KPI cards ---------- */
+  .kpi-grid{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px;
+  }
+  .kpi-card{
+    background:var(--panel);border:1px solid var(--panel-border);
+    border-left:5px solid var(--accent-orange);
+    border-radius:var(--radius-m);padding:12px 14px;box-shadow:var(--shadow);
+  }
+  .kpi-card.blue{border-left-color:var(--accent-blue);}
+  .kpi-card.teal{border-left-color:var(--accent-teal);}
+  .kpi-card.red{border-left-color:var(--accent-red);}
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;}
+  .kpi-label{font-size:.72rem;color:var(--ink-soft);font-weight:600;}
+  .kpi-icon{font-size:.9rem;opacity:.75;}
+  .kpi-value{font-size:1.28rem;font-weight:800;margin-top:4px;}
+  .kpi-value small{font-size:.68rem;font-weight:600;color:var(--ink-soft);}
+  .kpi-value.blue{color:var(--accent-blue);}
+  .kpi-sub{font-size:.68rem;color:#3a9153;font-weight:600;margin-top:3px;display:flex;align-items:center;gap:3px;}
+  .kpi-sub.plain{color:var(--ink-soft);}
+
+  /* ---------- Tabs ---------- */
+  .tabbar{
+    display:flex;gap:6px;margin-top:18px;overflow-x:auto;padding-bottom:4px;
+    border-bottom:2px solid var(--panel-border);
+  }
+  .tabbar::-webkit-scrollbar{height:6px;}
+  .tab-btn{
+    border:none;background:transparent;color:var(--ink-soft);
+    padding:10px 16px;border-radius:10px 10px 0 0;font-size:.82rem;font-weight:700;
+    display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
+  }
+  .tab-btn.active{
+    background:linear-gradient(120deg,var(--tab-active-a),var(--tab-active-b));
+    color:#fff;box-shadow:0 3px 8px rgba(200,90,43,0.3);
+  }
+  .tab-btn:not(.active):hover{background:#f1e7d8;}
+
+  /* ---------- Panels ---------- */
+  .tab-panel{display:none;margin-top:18px;}
+  .tab-panel.active{display:block;}
+  .grid-2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .card{
+    background:var(--panel);border:1px solid var(--panel-border);
+    border-radius:var(--radius-l);padding:18px;box-shadow:var(--shadow);
+  }
+  .card-head{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px;
+  }
+  .card-title{font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+  .card-sub{font-size:.72rem;color:var(--ink-soft);margin:0 0 12px;}
+  .tag{
+    font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:14px;
+    background:#fdf0df;color:#a85f1e;border:1px solid #f2d6ac;
+  }
+  .tag.green{background:#e7f6ec;color:#2c7a44;border-color:#c6e9d1;}
+  .chart-wrap{position:relative;height:280px;}
+  .chart-wrap.small{height:230px;}
+
+  table{width:100%;border-collapse:collapse;font-size:.82rem;}
+  thead th{
+    text-align:right;padding:9px 10px;color:var(--ink-soft);font-weight:700;font-size:.75rem;
+    border-bottom:2px solid var(--panel-border);
+  }
+  thead th:first-child{text-align:left;}
+  tbody td{padding:9px 10px;text-align:right;border-bottom:1px solid #f1e9db;}
+  tbody td:first-child{text-align:left;font-weight:600;}
+  tbody tr:last-child{background:#fdf3e3;font-weight:800;}
+  tbody tr:last-child td{border-bottom:none;}
+
+  .stat-mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0;}
+  .stat-mini{background:#fbf6ee;border-radius:var(--radius-m);padding:14px;text-align:center;}
+  .stat-mini .n{font-size:1.4rem;font-weight:800;color:#c85a2b;}
+  .stat-mini .l{font-size:.72rem;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+
+  .list-box{background:#fbf6ee;border-radius:var(--radius-m);padding:16px;}
+  .list-box h4{margin:0 0 10px;font-size:.85rem;display:flex;align-items:center;gap:6px;}
+  .list-box ul{margin:0;padding-left:18px;font-size:.8rem;line-height:1.7;color:#4a4136;}
+
+  .member-card{
+    background:#fbf6ee;border-radius:var(--radius-m);padding:16px;position:relative;
+  }
+  .member-card .count{
+    position:absolute;top:14px;right:14px;background:#eee1cd;color:#8a5a1e;
+    font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:14px;
+  }
+  .member-card .amt{font-size:1.5rem;font-weight:800;color:#c85a2b;margin:6px 0 8px;}
+  .member-card p{font-size:.74rem;color:var(--ink-soft);margin:0;line-height:1.5;}
+
+  .risk-card{
+    background:var(--panel);border:1px solid var(--panel-border);border-radius:var(--radius-l);
+    padding:18px;box-shadow:var(--shadow);border-top:4px solid var(--accent-red);
+  }
+  .risk-card.green{border-top-color:var(--accent-teal);}
+  .risk-card .r-title{font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .risk-card .r-val{font-size:1.5rem;font-weight:800;margin:8px 0;}
+  .risk-card p{font-size:.74rem;color:var(--ink-soft);line-height:1.5;margin:0;}
+  .notice-box{
+    margin-top:16px;background:#fdf3d9;border:1px solid #f2debb;border-radius:var(--radius-m);
+    padding:16px;font-size:.78rem;line-height:1.7;color:#5c4a26;
+  }
+  .notice-box h5{margin:0 0 6px;font-size:.85rem;display:flex;align-items:center;gap:6px;color:#8a5a1e;}
+
+  /* AI Simulator */
+  .ai-hero{
+    background:linear-gradient(120deg,#7a2a1e,#c85a2b);color:#fff;border-radius:var(--radius-l);
+    padding:22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .ai-hero .eyebrow{
+    background:rgba(255,255,255,0.18);display:inline-block;padding:3px 10px;border-radius:12px;
+    font-size:.68rem;font-weight:700;margin-bottom:8px;
+  }
+  .ai-hero h2{margin:0 0 6px;font-size:1.15rem;}
+  .ai-hero p{margin:0;font-size:.78rem;opacity:.9;max-width:600px;}
+  .ai-hero .profit-box{
+    background:rgba(0,0,0,0.15);border-radius:var(--radius-m);padding:12px 22px;text-align:center;
+  }
+  .ai-hero .profit-box .l{font-size:.68rem;opacity:.85;}
+  .ai-hero .profit-box .v{font-size:1.5rem;font-weight:800;}
+
+  .scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0;}
+  .scenario{
+    background:var(--panel);border:1px solid var(--panel-border);border-radius:var(--radius-m);
+    padding:14px;position:relative;cursor:pointer;transition:box-shadow .15s;
+  }
+  .scenario:hover{box-shadow:0 4px 14px rgba(0,0,0,0.08);}
+  .scenario.recommended{border-color:#e0a24f;}
+  .scenario .badge{
+    position:absolute;top:-10px;right:12px;background:#e08e2b;color:#fff;font-size:.65rem;
+    font-weight:700;padding:2px 9px;border-radius:10px;
+  }
+  .scenario h5{margin:0 0 6px;font-size:.82rem;}
+  .scenario .figs{font-size:.72rem;color:var(--ink-soft);font-weight:600;}
+  .scenario .note{font-size:.72rem;color:#a85f1e;margin-top:6px;}
+
+  .slider-row{margin-bottom:18px;}
+  .slider-row .lbl{display:flex;justify-content:space-between;font-size:.8rem;font-weight:600;margin-bottom:6px;}
+  .slider-row .lbl span.val{color:#c85a2b;font-weight:800;}
+  input[type=range]{
+    width:100%;accent-color:#c85a2b;
+  }
+  .insight-box{
+    margin-top:10px;background:#fdf0df;border:1px solid #f2d6ac;border-radius:var(--radius-m);
+    padding:12px 14px;font-size:.75rem;line-height:1.6;color:#5c4a26;
+  }
+  .insight-box b{color:#a85f1e;}
+
+  .alloc-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
+  .alloc-mini div{background:#fbf6ee;border-radius:10px;text-align:center;padding:10px 4px;}
+  .alloc-mini .v{font-weight:800;color:#c85a2b;font-size:.95rem;}
+  .alloc-mini .k{font-size:.68rem;color:var(--ink-soft);}
+
+  /* Chat */
+  .chat-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:var(--radius-l);box-shadow:var(--shadow);overflow:hidden;}
+  .chat-head{padding:18px 20px 6px;display:flex;gap:12px;align-items:center;}
+  .chat-avatar{
+    width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6f4fa8,#8a63c9);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;
+  }
+  .chat-head h3{margin:0;font-size:.9rem;}
+  .chat-head p{margin:2px 0 0;font-size:.74rem;color:var(--ink-soft);}
+  .suggest-row{display:flex;gap:10px;padding:10px 20px;flex-wrap:wrap;}
+  .suggest-chip{
+    background:#fbf6ee;border:1px solid #ecdfc7;border-radius:16px;padding:7px 13px;
+    font-size:.74rem;font-weight:600;cursor:pointer;color:#5c4a2f;display:flex;gap:6px;align-items:center;
+  }
+  .suggest-chip:hover{background:#f2e6cf;}
+  .chat-body{min-height:260px;padding:6px 20px 16px;display:flex;flex-direction:column;gap:12px;}
+  .msg{display:flex;gap:10px;max-width:80%;}
+  .msg .bubble{
+    background:#f4ecdf;border-radius:14px;padding:12px 14px;font-size:.82rem;line-height:1.7;
+  }
+  .chat-input-row{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--panel-border);}
+  .chat-input-row input{
+    flex:1;border:1px solid var(--panel-border);border-radius:20px;padding:10px 16px;font-size:.82rem;
+    outline:none;font-family:inherit;
+  }
+  .chat-input-row input:focus{border-color:#c8a56a;}
+  .send-btn{
+    background:#6f4fa8;color:#fff;border:none;border-radius:20px;padding:0 20px;font-weight:700;
+    font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:6px;
+  }
+  .send-btn:hover{filter:brightness(1.08);}
+
+  footer{
+    text-align:center;background:#241f1a;color:#e7ddcd;border-radius:var(--radius-l);
+    margin-top:22px;padding:16px;font-size:.78rem;line-height:1.8;
+  }
+  footer b{color:#fff;}
+
+  @media(max-width:1000px){
+    .kpi-grid{grid-template-columns:repeat(3,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .grid-3{grid-template-columns:1fr;}
+    .grid-4{grid-template-columns:repeat(2,1fr);}
+    .scenario-grid{grid-template-columns:1fr;}
+    .stat-mini-grid{grid-template-columns:repeat(2,1fr);}
+    .alloc-mini{grid-template-columns:repeat(2,1fr);}
+  }
+  @media(max-width:600px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= HEADER ================= -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-badge">🏛️</div>
+      <div class="header-title">
+        <h1>สหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด</h1>
+        <p>📈 ศูนย์วิเคราะห์ข้อมูลเพื่อการตัดสินใจผู้บริหาร (Executive Dashboard)
+          <span class="fy-badge">ปีบัญชี 2568</span>
+        </p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="pill">⏱ ประเมินความเข้มแข็ง: ระดับชั้น 1 (88.00 คะแนน)</div>
+      <button class="btn-ai" onclick="goToTab('ai')">✎ AI จำลองจัดสรรกำไร</button>
+    </div>
+  </div>
+
+  <!-- ================= KPI CARDS ================= -->
+  <div class="kpi-grid">
+    <div class="kpi-card orange">
+      <div class="kpi-top"><span class="kpi-label">สินทรัพย์รวม</span><span class="kpi-icon">🗂️</span></div>
+      <div class="kpi-value">2,137.2 <small>ลบ.</small></div>
+      <div class="kpi-sub">↗ +3.5% จากปีก่อน</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-top"><span class="kpi-label">ทุนเรือนหุ้น</span><span class="kpi-icon">🌿</span></div>
+      <div class="kpi-value">1,107.2 <small>ลบ.</small></div>
+      <div class="kpi-sub">↗ +3.81% (+40.59 ลบ.)</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-top"><span class="kpi-label">เงินรับฝากคงเหลือ</span><span class="kpi-icon">🐬</span></div>
+      <div class="kpi-value blue">808.96 <small>ลบ.</small></div>
+      <div class="kpi-sub">↗ +4.75% (1,461 บัญชี)</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-top"><span class="kpi-label">ลูกหนี้เงินกู้คงเหลือ</span><span class="kpi-icon">🔽</span></div>
+      <div class="kpi-value blue">1,099.9 <small>ลบ.</small></div>
+      <div class="kpi-sub plain">1,986 สัญญา (55.28% สมาชิก)</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-top"><span class="kpi-label">เงินฝาก&amp;ลงทุนอื่น</span><span class="kpi-icon">🌐</span></div>
+      <div class="kpi-value" style="color:var(--accent-teal)">1,031.7 <small>ลบ.</small></div>
+      <div class="kpi-sub plain">ฝาก 10 สหกรณ์ + พันธบัตร</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-top"><span class="kpi-label">ทุนสำรองสะสม</span><span class="kpi-icon">🛡️</span></div>
+      <div class="kpi-value" style="color:var(--accent-red)">116.83 <small>ลบ.</small></div>
+      <div class="kpi-sub">+ +6.54 ลบ. จากกำไรสุทธิ</div>
+    </div>
+  </div>
+
+  <!-- ================= TABS ================= -->
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="overview" onclick="goToTab('overview')">⊙ ภาพรวม &amp; การดำเนินงาน</button>
+    <button class="tab-btn" data-tab="strategy" onclick="goToTab('strategy')">🏛 ยุทธศาสตร์ &amp; ธรรมาภิบาล</button>
+    <button class="tab-btn" data-tab="members" onclick="goToTab('members')">👥 สมาชิก &amp; การให้บริการสินเชื่อ</button>
+    <button class="tab-btn" data-tab="liquidity" onclick="goToTab('liquidity')">◎ สภาพคล่อง &amp; การลงทุน</button>
+    <button class="tab-btn" data-tab="risk" onclick="goToTab('risk')">⚠ การบริหารความเสี่ยง &amp; NPL</button>
+    <button class="tab-btn" data-tab="ai" onclick="goToTab('ai')">🪙 AI จำลองการจัดสรรกำไรสุทธิ</button>
+    <button class="tab-btn" data-tab="chat" onclick="goToTab('chat')">💠 Gemini Executive Assistant</button>
+  </div>
+
+  <!-- ================= TAB: OVERVIEW ================= -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">📈 โครงสร้างและที่มาของเงินทุน (Capital Structure)</div>
+          <span class="tag">ณ 31 ธ.ค. 2568</span>
+        </div>
+        <p class="card-sub">เปรียบเทียบสัดส่วน ทุนเรือนหุ้น vs เงินรับฝากสมาชิก vs ทุนสำรองสะสม</p>
+        <div class="chart-wrap"><canvas id="chartCapital"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">★ ประเมินความเข้มแข็งสหกรณ์</div>
+          <span class="tag green">เกรด A</span>
+        </div>
+        <p class="card-sub">จัดชั้นระดับที่ 1 (88.00 / 100 คะแนน)</p>
+        <div class="chart-wrap"><canvas id="chartRadar"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title" style="margin-bottom:12px;">▦ สรุปโครงสร้างทางการเงินและการใช้ไปของเงินทุน (Financial Sources &amp; Uses)</div>
+      <table>
+        <thead>
+          <tr><th>รายการแหล่งเงินทุน / ใช้ไป</th><th>จำนวนเงิน (บาท)</th><th>สัดส่วน (%)</th><th>ระยะสั้น (บาท)</th><th>ระยะยาว (บาท)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>เงินรับฝากจากสมาชิก</td><td>808,959,245.01</td><td>37.85%</td><td>242,687,773.50</td><td>566,271,471.51</td></tr>
+          <tr><td>ทุนเรือนหุ้นสะสม</td><td>1,107,234,640.00</td><td>51.81%</td><td>-</td><td>1,107,234,640.00</td></tr>
+          <tr><td>ทุนสำรองและทุนสะสมอื่น ๆ</td><td>145,185,046.14</td><td>6.79%</td><td>-</td><td>145,185,046.14</td></tr>
+          <tr><td>หนี้สินหมุนเวียน &amp; ไม่หมุนเวียนอื่น</td><td>8,249,581.19</td><td>0.38%</td><td>2,366,521.19</td><td>5,883,060.00</td></tr>
+          <tr><td>รวมแหล่งที่มาเงินทุนทั้งสิ้น</td><td>2,137,185,874.15</td><td>100.00%</td><td>245,054,294.69</td><td>1,824,574,177.65</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= TAB: STRATEGY ================= -->
+  <div class="tab-panel" id="tab-strategy">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🎯 แผนกลยุทธ์สหกรณ์ ฉบับที่ 6 (พ.ศ. 2567 – 2569) ปรับปรุงปี 2568</div>
+        <span class="tag green">✓ ปฏิบัติตามระเบียบ 100%</span>
+      </div>
+      <p class="card-sub">สรุปความก้าวหน้าดำเนินงาน 11 หน้าแผนยุทธศาสตร์ และการปฏิบัติตามหลักธรรมาภิบาล</p>
+
+      <div class="stat-mini-grid">
+        <div class="stat-mini"><div class="n">3 ฉบับ</div><div class="l">ปรับปรุงระเบียบสหกรณ์</div></div>
+        <div class="stat-mini"><div class="n">32 เรื่อง</div><div class="l">ประกาศสหกรณ์ประจำปี</div></div>
+        <div class="stat-mini"><div class="n">88.00 / 100</div><div class="l">คะแนนประเมินความเข้มแข็ง<br>จัดชั้นความเข้มแข็งระดับ 1</div></div>
+        <div class="stat-mini"><div class="n">ข้อ 14 ครบถ้วน</div><div class="l">เปิดเผยค่าตอบแทนตามกฎกระทรวง<br>เปิดเผยในรายงานประจำปีรายบุคคล</div></div>
+      </div>
+
+      <div class="card-title" style="font-size:.85rem;margin-bottom:10px;">☰ สรุปการขับเคลื่อนประกาศ 32 เรื่องตามมติการบริหาร</div>
+      <div class="grid-2">
+        <div class="list-box">
+          <h4>💧 ด้านเงินให้สมาชิกกู้ยืม (5 เรื่อง)</h4>
+          <ul>
+            <li>หลักเกณฑ์พิจารณาการให้กู้แก่สมาชิก พ.ศ. 2568</li>
+            <li>โครงการสินเชื่อสุขใจ &amp; อัตราดอกเบี้ยเงินกู้ฉุกเฉิน</li>
+            <li>สินเชื่อช่วยเหลือผู้ประสบภัยพิบัติ พ.ศ. 2568</li>
+          </ul>
+        </div>
+        <div class="list-box">
+          <h4>♡ ด้านสวัสดิการและการพัฒนาสมาชิก (6 เรื่อง)</h4>
+          <ul>
+            <li>ทุนการศึกษาบุตร &amp; ทุนสมาชิกเรียนดี/อบรมระยะสั้น</li>
+            <li>โครงการพัฒนาการวางแผนทางการเงินแก่สมาชิก</li>
+            <li>ส่งเสริมฝึกอาชีพเสริมและองค์ความรู้สหกรณ์</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB: MEMBERS ================= -->
+  <div class="tab-panel" id="tab-members">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">👤 โครงสร้างสมาชิกภาพ (2,464 คน)</div>
+          <span class="tag green">+33 คนจากปีก่อน</span>
+        </div>
+        <div class="chart-wrap small"><canvas id="chartMembers"></canvas></div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-top:8px;color:var(--ink-soft);font-weight:600;">
+          <span>สมาชิกฝากเงิน: 887 ราย (36.00%)</span>
+          <span>สมาชิกกู้เงิน: 1,362 ราย (55.28%)</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">💳 สรุปการให้เงินกู้ยืมระหว่างปี 2568 (564.84 ล้านบาท)</div>
+        </div>
+        <p class="card-sub">รวม 1,688 สัญญา | ชำระหนี้เดิม 72.72% (410.75 ลบ.) vs รับสินเชื่อใหม่ 27.28% (154.08 ลบ.)</p>
+        <div class="chart-wrap small"><canvas id="chartLoans"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-head">
+        <div class="card-title">📄 ลูกหนี้เงินกู้ยืมคงเหลือสิ้นปี จำแนกตามกลุ่มสมาชิก</div>
+        <span style="font-size:.75rem;color:var(--ink-soft);font-weight:600;">รวมทั้งสิ้น 1,986 สัญญา | 1,099,971,654.21 บาท</span>
+      </div>
+      <div class="grid-3">
+        <div class="member-card">
+          <span class="count">1,437 สัญญา</span>
+          <div style="font-size:.8rem;font-weight:700;">สมาชิกสามัญ</div>
+          <div class="amt">983.62 ล้านบาท</div>
+          <p>เงินกู้สามัญปกติ 738.2 ลบ. (705 สัญญา), สินเชื่อสุขใจ/เกษียณ/ผ่อนคลายรวมกว่า 90 ลบ.</p>
+        </div>
+        <div class="member-card">
+          <span class="count">463 สัญญา</span>
+          <div style="font-size:.8rem;font-weight:700;">สมาชิกสามัญ (พนักงานราชการ)</div>
+          <div class="amt">112.36 ล้านบาท</div>
+          <p>กู้เพื่อความเป็นอยู่ในการดำรงชีพ 89.49 ลบ. (205 สัญญา), ฉุกเฉิน 1.24 ลบ.</p>
+        </div>
+        <div class="member-card">
+          <span class="count">86 สัญญา</span>
+          <div style="font-size:.8rem;font-weight:700;">สมาชิกสมทบ</div>
+          <div class="amt">3.99 ล้านบาท</div>
+          <p>เงินกู้ไม่เกินค่าหุ้น 3.59 ลบ. (57 สัญญา), ฉุกเฉิน 1.48 แสนบาท</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB: LIQUIDITY ================= -->
+  <div class="tab-panel" id="tab-liquidity">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><div class="card-title">◐ พอร์ตเงินฝากและการลงทุน (1,031.76 ลบ.)</div></div>
+        <div class="chart-wrap"><canvas id="chartPortfolio"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">🏦 กระจายเงินฝากสหกรณ์อื่น (10 แห่ง : รวม 979.59 ล้านบาท)</div>
+          <span class="tag green">ถูกต้องตาม พ.ร.บ.สหกรณ์ ม.62</span>
+        </div>
+        <table>
+          <thead><tr><th>ชื่อสหกรณ์ผู้รับฝาก</th><th>ยอดเงินฝาก (บาท)</th><th>สัดส่วนในพอร์ต (%)</th></tr></thead>
+          <tbody>
+            <tr style="color:#a85f1e;font-weight:700;"><td>1. ชุมนุมสหกรณ์ออมทรัพย์แห่งประเทศไทย จำกัด (สอ.ท.)</td><td>375,000,000.00</td><td>38.28%</td></tr>
+            <tr><td>2. สหกรณ์ออมทรัพย์สาธารณสุขชัยภูมิ จำกัด</td><td>110,882,915.96</td><td>11.32%</td></tr>
+            <tr><td>3. สหกรณ์ออมทรัพย์สาธารณสุขจังหวัดขอนแก่น จำกัด</td><td>110,470,136.99</td><td>11.28%</td></tr>
+            <tr><td>4. สหกรณ์ออมทรัพย์ครูมหาสารคาม จำกัด</td><td>106,515,533.64</td><td>10.87%</td></tr>
+            <tr><td>5. สหกรณ์ออมทรัพย์ครูนครราชสีมา จำกัด</td><td>103,639,681.44</td><td>10.58%</td></tr>
+            <tr><td>6. สหกรณ์ออมทรัพย์สาธารณสุขเลย จำกัด</td><td>80,000,000.00</td><td>8.17%</td></tr>
+            <tr><td>7. สหกรณ์ออมทรัพย์สาธารณสุขสงขลา จำกัด</td><td>40,000,000.00</td><td>4.08%</td></tr>
+            <tr><td>8. สหกรณ์อื่น ๆ (ตำรวจนครปฐม, ตำรวจเลย, ครูกาญจนบุรี)</td><td>53,085,785.82</td><td>5.42%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB: RISK ================= -->
+  <div class="tab-panel" id="tab-risk">
+    <div class="grid-3">
+      <div class="risk-card">
+        <div class="r-title">ลูกหนี้ตามคำพิพากษา 📌</div>
+        <div class="r-val">2,570,055.96 <small style="font-size:.85rem;font-weight:600;">บาท</small></div>
+        <p>จำนวน 3 ราย | ตั้งค่าเผื่อหนี้สงสัยจะสูญเต็มจำนวน (100%) ตามระเบียบนายทะเบียนสหกรณ์ พ.ศ. 2563/2567</p>
+      </div>
+      <div class="risk-card">
+        <div class="r-title">ลูกหนี้สามัญรอชำระ 👤</div>
+        <div class="r-val">1,669,617.38 <small style="font-size:.85rem;font-weight:600;">บาท</small></div>
+        <p>จำนวน 5 ราย (ลูกหนี้ออกจากราชการ), ความเสี่ยงต่ำเนื่องจากสามารถเรียกเก็บจากผู้ค้ำประกันได้</p>
+      </div>
+      <div class="risk-card green">
+        <div class="r-title">ทุนสงเคราะห์ค้ำประกัน 🧑‍🤝‍🧑</div>
+        <div class="r-val">405,278.81 <small style="font-size:.85rem;font-weight:600;">บาท</small></div>
+        <p>กองทุนบรรเทาความเดือดร้อนสมาชิกผู้ค้ำประกันหนี้สินแทนผู้กู้ | ไม่มีรายการจ่ายความเสียหายในปี 2568</p>
+      </div>
+    </div>
+
+    <div class="notice-box">
+      <h5>🛡 การควบคุมความเสี่ยงตามประกาศนายทะเบียนสหกรณ์ พ.ศ. 2567</h5>
+      สหกรณ์ได้ปฏิบัติตามหลักเกณฑ์การกำหนดค่าเผื่อหนี้สงสัยจะสูญอย่างรัดกุม โดยลูกหนี้ตามคำพิพากษาทั้ง 3 ราย ได้แก่ รายที่ 1 (4,748.70 บาท), รายที่ 2 (1,745,707.80 บาท) และรายที่ 3 (819,599.46 บาท) สหกรณ์ได้ตั้งค่าเผื่อหนี้สงสัยจะสูญไว้ 100% แล้วทั้งจำนวน ทำให้ไม่ระบบผลต่อเสถียรภาพทางการเงินและกำไรสุทธิในอนาคต
+    </div>
+  </div>
+
+  <!-- ================= TAB: AI SIMULATOR ================= -->
+  <div class="tab-panel" id="tab-ai">
+    <div class="ai-hero">
+      <div>
+        <span class="eyebrow">◈ AI EXECUTIVE DECISION ENGINE</span>
+        <h2>จำลองแบบไมเดลจัดสรรกำไรสุทธิด้วย AI (Profit Allocation Simulator)</h2>
+        <p>คำนวณและเปรียบเทียบผลกระทบของอัตราเงินปันผล (Dividend), เงินเฉลี่ยคืน (Patronage Refund), และการจัดสรรเข้าทุนสำรอง/ทุนสวัสดิการ เพื่อการตัดสินใจที่ดีที่สุดในที่ประชุมใหญ่</p>
+      </div>
+      <div class="profit-box">
+        <div class="l">ประมาณการกำไรสุทธิปี 2568</div>
+        <div class="v">65,000,000 บาท</div>
+      </div>
+    </div>
+
+    <div class="scenario-grid">
+      <div class="scenario recommended" onclick="applyScenario(5.25,12,10)">
+        <span class="badge">แนะนำโดย AI</span>
+        <h5>🔷 Scenario A: สมดุลและสวัสดิการยั่งยืน</h5>
+        <div class="figs">ปันผล 5.25% | เฉลี่ยคืน 12.0% | ทุนสำรอง 10%</div>
+        <div class="note">เน้นสร้างความพึงพอใจให้ทั้งผู้กู้และผู้ฝากในการเสริมสภาพคล่อง</div>
+      </div>
+      <div class="scenario" onclick="applyScenario(4.75,10,15)">
+        <h5>🛡 Scenario B: เสริมความเข้มแข็งทุนสำรอง</h5>
+        <div class="figs">ปันผล 4.75% | เฉลี่ยคืน 10.0% | ทุนสำรอง 15%</div>
+        <div class="note">เน้นเติบโตของทุนสำรองเพื่อรองรับความเสี่ยงในอนาคต</div>
+      </div>
+      <div class="scenario" onclick="applyScenario(5.5,15,10)">
+        <h5>💠 Scenario C: ผลตอบแทนสมาชิกสูงสุด</h5>
+        <div class="figs">ปันผล 5.50% | เฉลี่ยคืน 15.0% | ทุนสำรอง 10%</div>
+        <div class="note">เน้นจ่ายปันผลและเฉลี่ยคืนสูงสุดแก่สมาชิกเพื่อสร้างแรงจูงใจ</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">☰ ปรับแต่งสัดส่วนการจัดสรร</div>
+
+        <div class="slider-row">
+          <div class="lbl"><span>อัตราเงินปันผลตามหุ้น (%):</span><span class="val" id="valDividend">5.25%</span></div>
+          <input type="range" id="sldDividend" min="3" max="7" step="0.05" value="5.25" oninput="updateSim()">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>อัตราเงินเฉลี่ยคืนดอกเบี้ย (%):</span><span class="val" id="valRefund">12.00%</span></div>
+          <input type="range" id="sldRefund" min="5" max="20" step="0.5" value="12" oninput="updateSim()">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>การจัดสรรเข้าทุนสำรอง (%):</span><span class="val" id="valReserve">10.00%</span></div>
+          <input type="range" id="sldReserve" min="5" max="20" step="0.5" value="10" oninput="updateSim()">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>จัดสรรทุนสวัสดิการ &amp; สาธารณประโยชน์ (%):</span><span class="val" id="valWelfare">5.00%</span></div>
+          <input type="range" id="sldWelfare" min="1" max="10" step="0.5" value="5" oninput="updateSim()">
+        </div>
+
+        <div class="insight-box">
+          <b>ⓘ ผลวิเคราะห์ข้อดี-ข้อเสียโดย AI:</b> <span id="aiInsight">ข้อเสนอ Scenario A ให้ความสมดุลสูงสุด โดยเงินปันผล 5.25% สอดคล้องกับอัตราดอกเบี้ยในตลาด และรักษาระดับความเสถียรของทุนสำรองไว้ได้อย่างมั่นคง</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">▤ เปรียบเทียบสัดส่วนมูลค่าเงินจัดสรร (บาท)</div>
+          <span style="font-size:.72rem;color:var(--ink-soft);font-weight:600;">ฐานกำไรสุทธิ 65,000,000 บาท</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartSim"></canvas></div>
+        <div class="alloc-mini">
+          <div><div class="v" id="miniDividend">58.13 ลบ.</div><div class="k">เงินปันผลจ่ายรวม</div></div>
+          <div><div class="v" id="miniRefund">4.20 ลบ.</div><div class="k">เงินเฉลี่ยคืนจ่ายรวม</div></div>
+          <div><div class="v" id="miniReserve">6.50 ลบ.</div><div class="k">เข้าทุนสำรอง</div></div>
+          <div><div class="v" id="miniWelfare">3.25 ลบ.</div><div class="k">เข้าทุนสวัสดิการ/สะสม</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB: CHAT ================= -->
+  <div class="tab-panel" id="tab-chat">
+    <div class="chat-card">
+      <div class="chat-head">
+        <div class="chat-avatar">AI</div>
+        <div>
+          <h3>ผู้ช่วยปัญญาประดิษฐ์ AI สำหรับคณะกรรมการดำเนินการ</h3>
+          <p>สอบถามข้อเสนอแนะ ทิศทางนโยบาย และแนวทางการบริหารเสถียรภาพทางการเงินของสหกรณ์</p>
+        </div>
+      </div>
+      <div class="suggest-row">
+        <div class="suggest-chip" onclick="sendSuggested('วิเคราะห์ความเสี่ยงเงินฝากสหกรณ์อื่น')">📊 วิเคราะห์ความเสี่ยงเงินฝากสหกรณ์อื่น</div>
+        <div class="suggest-chip" onclick="sendSuggested('ข้อเสนอแนะเพิ่มคะแนนความเข้มแข็ง')">🎯 ข้อเสนอแนะเพิ่มคะแนนความเข้มแข็ง</div>
+        <div class="suggest-chip" onclick="sendSuggested('วิเคราะห์โครงสร้างหนี้สมาชิก')">💡 วิเคราะห์โครงสร้างหนี้สมาชิก</div>
+      </div>
+      <div class="chat-body" id="chatBody">
+        <div class="msg">
+          <div class="chat-avatar" style="width:30px;height:30px;font-size:.7rem;">AI</div>
+          <div class="bubble">สวัสดีครับท่านผู้บริหาร ผมคือ Gemini AI ผู้ช่วยวิเคราะห์ข้อมูลของสหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด พร้อมตอบคำถามเชิงยุทธศาสตร์และจำลองฉากทัศน์ทางการเงินเพื่อประกอบการตัดสินใจครับ</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="พิมพ์คำถามเกี่ยวกับการเงิน ยุทธศาสตร์ หรือสภาพคล่อง...">
+        <button class="send-btn" onclick="sendChat()">ส่งคำถาม ➤</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div><b>สหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด (Cooperative Savings for Department of Cooperative Auditing Ltd.)</b></div>
+    <div>ระบบบริหารจัดการและสนับสนุนการตัดสินใจผู้บริหาร (Executive Information System) | ข้อมูลประจำปี 2568</div>
+  </footer>
+
+</div>
+
+<script>
+/* ---------------- Tabs ---------------- */
+const chartsInitialized = {};
+function goToTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+  initChartsForTab(tab);
+}
+
+/* ---------------- Chart.js defaults ---------------- */
+Chart.defaults.font.family = "'Noto Sans Thai','Sarabun',sans-serif";
+Chart.defaults.color = '#7a6f60';
+
+const palette = {orange:'#e08e2b', blue:'#2f6fb0', red:'#b23b3b', teal:'#1f8f7a', purple:'#6f4fa8'};
+
+function initChartsForTab(tab){
+  if(chartsInitialized[tab]) return;
+  chartsInitialized[tab]=true;
+
+  if(tab==='overview'){
+    new Chart(document.getElementById('chartCapital'), {
+      type:'bar',
+      data:{
+        labels:['ทุนเรือนหุ้น','เงินรับฝากสมาชิก','ทุนสำรองสะสม','ทุนสะสมอื่น ๆ'],
+        datasets:[{
+          data:[1107.2, 808.96, 116.83, 55],
+          backgroundColor:[palette.orange, palette.blue, palette.red, palette.teal],
+          borderRadius:6, maxBarThickness:70
+        }]
+      },
+      options:{
+        plugins:{legend:{display:false}},
+        scales:{ y:{ ticks:{ callback:v=>v+' ลบ.' }, grid:{color:'#f1e9db'} }, x:{ grid:{display:false} } }
+      }
+    });
+
+    new Chart(document.getElementById('chartRadar'), {
+      type:'radar',
+      data:{
+        labels:['เลือธรภาพทุน','การบริหารความเสี่ยง','คุณภาพลูกหนี้','สภาพคล่อง','ธรรมาภิบาล','สวัสดิการสมาชิก'],
+        datasets:[{
+          label:'คะแนนประเมิน (เต็ม 100)',
+          data:[100,85,88,90,92,80],
+          borderColor:palette.orange, backgroundColor:'rgba(224,142,43,0.18)',
+          pointBackgroundColor:palette.orange
+        }]
+      },
+      options:{
+        plugins:{legend:{position:'top', labels:{boxWidth:12, font:{size:10}}}},
+        scales:{ r:{ min:0, max:100, ticks:{stepSize:20, backdropColor:'transparent'}, grid:{color:'#eee2cf'} } }
+      }
+    });
+  }
+
+  if(tab==='members'){
+    new Chart(document.getElementById('chartMembers'), {
+      type:'doughnut',
+      data:{
+        labels:['สมาชิกสามัญ (ข้าราชการ/เจ้าหน้าที่)','สมาชิกสามัญ (พนักงานราชการ)','สมาชิกสมทบ'],
+        datasets:[{ data:[1730, 543, 191], backgroundColor:[palette.red, palette.blue, palette.purple] }]
+      },
+      options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:10}}}}, cutout:'62%' }
+    });
+
+    new Chart(document.getElementById('chartLoans'), {
+      type:'bar',
+      data:{
+        labels:['กู้สามัญปกติ/เคหะ','กู้เพื่อดำรงชีพ/สุขใจ','กู้ฉุกเฉิน','กู้ไม่เกินค่าหุ้น'],
+        datasets:[
+          {label:'สมาชิกสามัญ (ลบ.)', data:[330,45,8,55], backgroundColor:palette.orange, stack:'s'},
+          {label:'พนักงานราชการ (ลบ.)', data:[0,55,3,20], backgroundColor:palette.blue, stack:'s'}
+        ]
+      },
+      options:{
+        plugins:{legend:{position:'top', labels:{boxWidth:12, font:{size:10}}}},
+        scales:{ x:{stacked:true, grid:{display:false}}, y:{stacked:true, ticks:{callback:v=>v+' ลบ.'}, grid:{color:'#f1e9db'}} }
+      }
+    });
+  }
+
+  if(tab==='liquidity'){
+    new Chart(document.getElementById('chartPortfolio'), {
+      type:'pie',
+      data:{
+        labels:['เงินฝากสหกรณ์อื่น (10 แห่ง)','พันธบัตรรัฐบาล (10 ปี)','หุ้น ชสอ.','เงินฝากธนาคาร'],
+        datasets:[{ data:[979.59, 40, 8, 4.17], backgroundColor:[palette.teal, palette.orange, palette.blue, '#c9c2b4'] }]
+      },
+      options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:10}}}} }
+    });
+  }
+
+  if(tab==='ai'){
+    initSimChart();
+  }
+}
+
+/* ---------------- AI simulator ---------------- */
+let simChart;
+function initSimChart(){
+  simChart = new Chart(document.getElementById('chartSim'), {
+    type:'bar',
+    data:{
+      labels:['เงินปันผลตามหุ้น','เงินเฉลี่ยคืนดอกเบี้ย','จัดสรรเข้าทุนสำรอง','ทุนสวัสดิการ & อื่นๆ'],
+      datasets:[{ data:[58.13,4.20,6.50,3.25], backgroundColor:[palette.orange, palette.blue, palette.red, palette.teal], borderRadius:6, maxBarThickness:80 }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{ y:{ ticks:{callback:v=>v+' ลบ.'}, grid:{color:'#f1e9db'} }, x:{grid:{display:false}} }
+    }
+  });
+}
+
+function updateSim(){
+  const div = parseFloat(document.getElementById('sldDividend').value);
+  const ref = parseFloat(document.getElementById('sldRefund').value);
+  const res = parseFloat(document.getElementById('sldReserve').value);
+  const wel = parseFloat(document.getElementById('sldWelfare').value);
+
+  document.getElementById('valDividend').textContent = div.toFixed(2)+'%';
+  document.getElementById('valRefund').textContent = ref.toFixed(2)+'%';
+  document.getElementById('valReserve').textContent = res.toFixed(2)+'%';
+  document.getElementById('valWelfare').textContent = wel.toFixed(2)+'%';
+
+  const profit = 65; // million baht base for demo proportions
+  const shareCapitalRatio = 1107.2; // for dividend base approximation
+  // Simplified illustrative allocation model (for prototype purposes)
+  const dividendAmt = +(profit * (div/7)).toFixed(2);
+  const refundAmt = +(profit * (ref/100)).toFixed(2);
+  const reserveAmt = +(profit * (res/100)).toFixed(2);
+  const welfareAmt = +(profit * (wel/100)).toFixed(2);
+
+  document.getElementById('miniDividend').textContent = dividendAmt+' ลบ.';
+  document.getElementById('miniRefund').textContent = refundAmt+' ลบ.';
+  document.getElementById('miniReserve').textContent = reserveAmt+' ลบ.';
+  document.getElementById('miniWelfare').textContent = welfareAmt+' ลบ.';
+
+  if(simChart){
+    simChart.data.datasets[0].data = [dividendAmt, refundAmt, reserveAmt, welfareAmt];
+    simChart.update();
+  }
+
+  document.getElementById('aiInsight').textContent =
+    `ที่อัตราปันผล ${div.toFixed(2)}% เฉลี่ยคืน ${ref.toFixed(2)}% และจัดสรรเข้าทุนสำรอง ${res.toFixed(2)}% โมเดลประเมินว่าสหกรณ์ยังคงรักษาความเข้มแข็งของทุนสำรองไว้ได้ ในขณะที่สร้างแรงจูงใจให้สมาชิกอย่างเหมาะสม`;
+}
+
+function applyScenario(div, ref, res){
+  document.getElementById('sldDividend').value = div;
+  document.getElementById('sldRefund').value = ref;
+  document.getElementById('sldReserve').value = res;
+  if(!chartsInitialized['ai']){ goToTab('ai'); }
+  updateSim();
+}
+
+/* ---------------- Chat (static demo) ---------------- */
+function appendMsg(text, isUser){
+  const body = document.getElementById('chatBody');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+  if(isUser){ wrap.style.marginLeft='auto'; wrap.style.flexDirection='row-reverse'; }
+  wrap.innerHTML = `
+    <div class="chat-avatar" style="width:30px;height:30px;font-size:.7rem;${isUser?'background:linear-gradient(135deg,#c85a2b,#e08e2b);':''}">${isUser?'ท่าน':'AI'}</div>
+    <div class="bubble" style="${isUser?'background:#fdeee0;':''}">${text}</div>`;
+  body.appendChild(wrap);
+  body.scrollTop = body.scrollHeight;
+}
+
+function sendChat(){
+  const input = document.getElementById('chatInput');
+  const val = input.value.trim();
+  if(!val) return;
+  appendMsg(val, true);
+  input.value='';
+  setTimeout(()=>{
+    appendMsg('นี่คือหน้าต้นแบบ (prototype) สำหรับสาธิตดีไซน์ — ในระบบจริงคำถามนี้จะถูกส่งไปประมวลผลโดย Gemini AI พร้อมข้อมูลเชิงลึกจากฐานข้อมูลสหกรณ์ครับ', false);
+  }, 500);
+}
+function sendSuggested(text){
+  document.getElementById('chatInput').value = text;
+  sendChat();
+}
+document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+
+/* init first tab charts on load */
+window.addEventListener('load', ()=> initChartsForTab('overview'));
+</script>
+</body>
+</html>
