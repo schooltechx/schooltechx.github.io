@@ -34,7 +34,69 @@
 </head>
 <body class="min-h-screen flex flex-col text-slate-800 bg-slate-50 antialiased selection:bg-blue-600 selection:text-white">
 
-    <!-- ============================= UNIFIED HEADER ============================= -->
+    <!-- ============================= LOGIN SCREEN ============================= -->
+    <div id="view-login" class="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-[#002d56] via-[#003c71] to-[#00284d] px-4 py-10">
+        <div class="w-full max-w-sm">
+            <!-- Brand -->
+            <div class="flex flex-col items-center mb-6 text-white">
+                <div class="bg-gradient-to-br from-amber-500 to-amber-700 w-14 h-14 rounded-2xl flex items-center justify-center font-extrabold text-2xl shadow-lg border-2 border-white/20 mb-3">SC</div>
+                <h1 class="text-lg font-bold tracking-tight">Smart Coop</h1>
+                <p class="text-xs text-slate-300 mt-0.5">ระบบสมาชิกและผู้บริหารสหกรณ์</p>
+            </div>
+
+            <!-- Login Card -->
+            <div class="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 space-y-5">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">เข้าสู่ระบบ</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">เลือกสหกรณ์ที่ท่านต้องการเข้าใช้งาน</p>
+                </div>
+
+                <!-- Recent coop selector (shown when there is usage history) -->
+                <div id="coopRecentWrap" class="hidden space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-600">สหกรณ์ที่เคยเข้าใช้</label>
+                    <select id="coopSelect" onchange="handleCoopSelectChange()" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500">
+                    </select>
+                </div>
+
+                <!-- New coop entry (shown for first-time device or when "add new" selected) -->
+                <div id="coopNewWrap" class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-600">รหัสสหกรณ์ (Coop ID)</label>
+                    <input id="newCoopId" type="text" placeholder="เช่น 1-234-56-78901-2" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500">
+                    <input id="newCoopName" type="text" placeholder="ชื่อสหกรณ์ (ถ้าทราบ) — ไม่บังคับ" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500">
+                    <p id="coopIdError" class="hidden text-[11px] text-red-600 font-medium">กรุณากรอกรหัสสหกรณ์ก่อนเข้าสู่ระบบ</p>
+                    <button id="coopNewCancelBtn" onclick="cancelNewCoop()" class="hidden text-[11px] text-blue-600 font-semibold hover:underline">← เลือกจากสหกรณ์ที่เคยเข้าใช้แทน</button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="h-px bg-slate-200 flex-1"></div>
+                    <span class="text-[11px] text-slate-400 font-medium">เข้าสู่ระบบด้วย</span>
+                    <div class="h-px bg-slate-200 flex-1"></div>
+                </div>
+
+                <!-- Provider Login Buttons -->
+                <div class="space-y-2.5">
+                    <button id="btnThaiD" onclick="attemptLogin('thaid')" class="w-full flex items-center justify-center gap-2.5 bg-[#0b3d91] hover:bg-[#0a3480] active:scale-[0.98] text-white text-sm font-bold py-3 rounded-xl transition shadow-sm">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2.5" fill="#F4623A"/><path d="M2 9.5h20" stroke="white" stroke-width="1.2"/><circle cx="7" cy="14.5" r="2" fill="white"/><path d="M11.5 13h7M11.5 16h5" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        เข้าสู่ระบบด้วย ThaiD
+                    </button>
+                    <button id="btnGoogle" onclick="attemptLogin('google')" class="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 text-sm font-bold py-3 rounded-xl border border-slate-300 transition shadow-sm">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.54 5.54 0 01-2.4 3.63v3h3.88c2.27-2.09 3.54-5.17 3.54-8.87z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.9l-3.88-3c-1.08.72-2.45 1.15-4.05 1.15-3.11 0-5.75-2.1-6.69-4.93H1.3v3.1A12 12 0 0012 24z"/>
+                            <path fill="#FBBC05" d="M5.31 14.32a7.2 7.2 0 010-4.64v-3.1H1.3a12 12 0 000 10.84l4.01-3.1z"/>
+                            <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.58 1.79l3.44-3.44C17.94 1.19 15.24 0 12 0A12 12 0 001.3 6.58l4.01 3.1C6.25 6.85 8.89 4.75 12 4.75z"/>
+                        </svg>
+                        เข้าสู่ระบบด้วย Google
+                    </button>
+                </div>
+
+                <p class="text-[10px] text-slate-400 text-center leading-relaxed">การเข้าสู่ระบบด้วย ThaiD เป็นการยืนยันตัวตนตามมาตรฐานภาครัฐ ข้อมูลของท่านจะถูกใช้เพื่อเข้าถึงบริการสหกรณ์เท่านั้น</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================= APP SHELL (after login) ============================= -->
+    <div id="app-shell" class="hidden flex-col min-h-screen">
     <header class="bg-[#002d56] text-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
             <div class="flex flex-col md:flex-row justify-between items-center gap-3">
@@ -55,7 +117,7 @@
                         <p class="text-xs text-slate-300 mt-0.5 flex items-center gap-2 flex-wrap">
                             <span>รหัสสมาชิก: <strong class="text-white font-semibold">2536</strong></span>
                             <span class="hidden sm:inline">•</span>
-                            <span class="text-slate-300">สหกรณ์การเกษตรรัตนบุรี จำกัด</span>
+                            <span id="headerCoopName" class="text-slate-300">สหกรณ์การเกษตรรัตนบุรี จำกัด</span>
                         </p>
                     </div>
                 </div>
@@ -792,9 +854,181 @@
             <p class="text-[11px] text-slate-500">สหกรณ์การเกษตรรัตนบุรี จำกัด | สหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด | Designed with Tailwind CSS</p>
         </div>
     </footer>
+    </div> <!-- /#app-shell -->
 
     <!-- ============================= SCRIPTS ============================= -->
     <script>
+        // ---- Login / Auth Logic ----
+        const DEFAULT_RECENT_COOPS = []; // no history by default (first-time device)
+        let recentCoops = [];
+        let selectedCoop = null;
+
+        // Wrapper around Artifact persistent storage with graceful in-memory fallback
+        async function storageGet(key) {
+            try {
+                if (window.storage && typeof window.storage.get === 'function') {
+                    const res = await window.storage.get(key, false);
+                    return res ? res.value : null;
+                }
+            } catch (e) { /* key not found or storage unavailable */ }
+            return null;
+        }
+        async function storageSet(key, value) {
+            try {
+                if (window.storage && typeof window.storage.set === 'function') {
+                    await window.storage.set(key, value, false);
+                    return true;
+                }
+            } catch (e) { /* storage unavailable, ignore */ }
+            return false;
+        }
+
+        async function loadRecentCoops() {
+            const raw = await storageGet('recent_coops');
+            if (raw) {
+                try { recentCoops = JSON.parse(raw); } catch (e) { recentCoops = []; }
+            } else {
+                recentCoops = DEFAULT_RECENT_COOPS.slice();
+            }
+            renderCoopSelector();
+        }
+
+        async function persistRecentCoops() {
+            await storageSet('recent_coops', JSON.stringify(recentCoops));
+        }
+
+        function renderCoopSelector() {
+            const recentWrap = document.getElementById('coopRecentWrap');
+            const newWrap = document.getElementById('coopNewWrap');
+            const select = document.getElementById('coopSelect');
+            const cancelBtn = document.getElementById('coopNewCancelBtn');
+
+            if (recentCoops.length > 0) {
+                recentWrap.classList.remove('hidden');
+                select.innerHTML = recentCoops.map(c =>
+                    `<option value="${c.id}">${c.name} (${c.id})</option>`
+                ).join('') + `<option value="__new__">+ เพิ่มสหกรณ์ใหม่ (ระบุรหัสสหกรณ์)</option>`;
+                // Default to first (most recent) coop, hide the manual-entry fields
+                select.value = recentCoops[0].id;
+                newWrap.classList.add('hidden');
+                cancelBtn.classList.add('hidden');
+            } else {
+                // First-time device: no history, go straight to manual coop-ID entry
+                recentWrap.classList.add('hidden');
+                newWrap.classList.remove('hidden');
+                cancelBtn.classList.add('hidden');
+            }
+        }
+
+        function handleCoopSelectChange() {
+            const select = document.getElementById('coopSelect');
+            const newWrap = document.getElementById('coopNewWrap');
+            const cancelBtn = document.getElementById('coopNewCancelBtn');
+            if (select.value === '__new__') {
+                newWrap.classList.remove('hidden');
+                cancelBtn.classList.remove('hidden');
+                document.getElementById('newCoopId').focus();
+            } else {
+                newWrap.classList.add('hidden');
+            }
+        }
+
+        function cancelNewCoop() {
+            const newWrap = document.getElementById('coopNewWrap');
+            const select = document.getElementById('coopSelect');
+            newWrap.classList.add('hidden');
+            if (recentCoops.length > 0) select.value = recentCoops[0].id;
+        }
+
+        function resolveSelectedCoop() {
+            const recentWrap = document.getElementById('coopRecentWrap');
+            const select = document.getElementById('coopSelect');
+            const usingSelect = !recentWrap.classList.contains('hidden') && select.value !== '__new__';
+
+            if (usingSelect) {
+                return recentCoops.find(c => c.id === select.value) || null;
+            }
+            const idInput = document.getElementById('newCoopId');
+            const nameInput = document.getElementById('newCoopName');
+            const id = idInput.value.trim();
+            const name = nameInput.value.trim();
+            const errEl = document.getElementById('coopIdError');
+            if (!id) {
+                errEl.classList.remove('hidden');
+                idInput.classList.add('border-red-500');
+                idInput.focus();
+                return null;
+            }
+            errEl.classList.add('hidden');
+            idInput.classList.remove('border-red-500');
+            return { id: id, name: name || `สหกรณ์รหัส ${id}` };
+        }
+
+        function attemptLogin(provider) {
+            const coop = resolveSelectedCoop();
+            if (!coop) return; // validation failed, error already shown
+
+            const btnId = provider === 'thaid' ? 'btnThaiD' : 'btnGoogle';
+            const btn = document.getElementById(btnId);
+            const originalHTML = btn.innerHTML;
+            const providerLabel = provider === 'thaid' ? 'ThaiD' : 'Google';
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-wait');
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg> กำลังยืนยันตัวตนด้วย ${providerLabel}...`;
+
+            setTimeout(() => {
+                completeLogin(coop, provider);
+            }, 1100);
+        }
+
+        async function completeLogin(coop, provider) {
+            selectedCoop = coop;
+
+            // Move/save this coop to the front of the recent-coop list
+            recentCoops = recentCoops.filter(c => c.id !== coop.id);
+            recentCoops.unshift(coop);
+            recentCoops = recentCoops.slice(0, 6);
+            await persistRecentCoops();
+
+            // Reflect chosen coop in the app header
+            document.getElementById('headerCoopName').innerText = coop.name;
+
+            // Reveal the app, hide the login screen
+            document.getElementById('view-login').classList.add('hidden');
+            const shell = document.getElementById('app-shell');
+            shell.classList.remove('hidden');
+            shell.classList.add('flex');
+
+            // Ensure member view chart initializes now that its canvas is visible
+            initChart();
+        }
+
+        function returnToLogin() {
+            // Reset app state back to defaults
+            document.getElementById('app-shell').classList.add('hidden');
+            document.getElementById('app-shell').classList.remove('flex');
+            document.getElementById('view-login').classList.remove('hidden');
+
+            if (currentRole === 'admin') {
+                document.getElementById('view-admin').classList.add('hidden');
+                document.getElementById('view-member').classList.remove('hidden');
+                currentRole = 'member';
+                document.getElementById('roleBadge').innerText = 'สมาชิกสามัญ';
+                document.getElementById('roleBadge').className = 'bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full';
+                document.getElementById('roleToggleLabel').innerText = 'สลับไปมุมมองผู้บริหาร';
+            }
+            destroyCharts();
+            adminInitialized = false;
+
+            // Reset login form buttons/fields for the next sign-in attempt
+            ['btnThaiD', 'btnGoogle'].forEach(id => { const b = document.getElementById(id); b.disabled = false; b.classList.remove('opacity-70', 'cursor-wait'); });
+            document.getElementById('btnThaiD').innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2.5" fill="#F4623A"/><path d="M2 9.5h20" stroke="white" stroke-width="1.2"/><circle cx="7" cy="14.5" r="2" fill="white"/><path d="M11.5 13h7M11.5 16h5" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg> เข้าสู่ระบบด้วย ThaiD`;
+            document.getElementById('btnGoogle').innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.54 5.54 0 01-2.4 3.63v3h3.88c2.27-2.09 3.54-5.17 3.54-8.87z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.9l-3.88-3c-1.08.72-2.45 1.15-4.05 1.15-3.11 0-5.75-2.1-6.69-4.93H1.3v3.1A12 12 0 0012 24z"/><path fill="#FBBC05" d="M5.31 14.32a7.2 7.2 0 010-4.64v-3.1H1.3a12 12 0 000 10.84l4.01-3.1z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.58 1.79l3.44-3.44C17.94 1.19 15.24 0 12 0A12 12 0 001.3 6.58l4.01 3.1C6.25 6.85 8.89 4.75 12 4.75z"/></svg> เข้าสู่ระบบด้วย Google`;
+            document.getElementById('newCoopId').value = '';
+            document.getElementById('newCoopName').value = '';
+            renderCoopSelector();
+        }
+
         // ---- Role Switching Logic ----
         let currentRole = 'member';
         let adminInitialized = false;
@@ -902,8 +1136,8 @@
         }
 
         function handleLogout() {
-            if(confirm('คุณต้องการออกจากระบบ Smart Member หรือไม่?')) {
-                alert('ออกจากระบบเรียบร้อยแล้ว');
+            if(confirm('คุณต้องการออกจากระบบ Smart Coop หรือไม่?')) {
+                returnToLogin();
             }
         }
 
@@ -1357,9 +1591,9 @@
         }
     
 
-        // ---- Initialize on page load (default: member view) ----
+        // ---- Initialize on page load: show login screen, load coop history ----
         window.onload = function() {
-            initChart();
+            loadRecentCoops();
         };
     </script>
 </body>
