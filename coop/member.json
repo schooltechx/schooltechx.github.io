@@ -1,0 +1,210 @@
+{
+  "member_profile": {
+    "member_id": "2536",
+    "prefix": "นางสาว",
+    "first_name": "ปัทมา",
+    "last_name": "พุฒวันเพ็ญ",
+    "member_type": "สมาชิกสามัญ",
+    "cooperative_name": "สหกรณ์การเกษตรรัตนบุรี จำกัด",
+    "status": "online",
+    "avatar_initial": "ป",
+    "last_updated": "2559-03-18"
+  },
+  "kpi_summary": {
+    "share_capital": {
+      "total_amount": 207000.00,
+      "total_periods": 158,
+      "amount_per_period": 1000.00
+    },
+    "deposits": {
+      "total_amount": 89458.40,
+      "account_count": 3,
+      "interest_status": "ปกติ"
+    },
+    "loans": {
+      "total_balance": 311400.00,
+      "active_contracts": 1,
+      "contract_type": "เงินกู้สามัญ",
+      "total_credit_limit": 350000.00
+    },
+    "guarantees": {
+      "total_amount": 509536.53,
+      "contract_count": 2,
+      "status": "ปกติ"
+    }
+  },
+  "recent_transactions": [
+    {
+      "id": 1,
+      "category": "share",
+      "category_label": "หุ้น",
+      "title": "ส่งชำระหุ้นประจำงวด (งวดที่ 158)",
+      "date": "2559-02-29",
+      "description": "ยกมาประจำงวด",
+      "type": "credit",
+      "amount": 1000.00,
+      "balance_after": 207000.00
+    },
+    {
+      "id": 2,
+      "category": "loan",
+      "category_label": "กู้",
+      "title": "ชำระเงินต้นกู้สามัญ (สัญญา 200-2558000672)",
+      "date": "2559-02-29",
+      "description": "ชำระตามภาระประจำงวด",
+      "type": "debit",
+      "amount": -5900.00,
+      "balance_after": 311400.00
+    },
+    {
+      "id": 3,
+      "category": "interest",
+      "category_label": "ดอก",
+      "title": "ชำระดอกเบี้ยเงินกู้สามัญ",
+      "date": "2559-02-29",
+      "description": "ตัดดอกเบี้ยประจำเดือน",
+      "type": "debit",
+      "amount": -1525.29,
+      "receipt_no": "5902001"
+    },
+    {
+      "id": 4,
+      "category": "deposit",
+      "category_label": "ฝาก",
+      "title": "ฝากเงินสด (บัญชีออมทรัพย์ 10-00001049)",
+      "date": "2559-02-15",
+      "description": "ฝากเงินสดผ่านเคาน์เตอร์",
+      "type": "credit",
+      "amount": 500.00,
+      "balance_after": 1416.03
+    }
+  ],
+  "shares_detail": {
+    "status": "ส่งหุ้นปกติ",
+    "total_value": 207000.00,
+    "history": [
+      {
+        "date": "2559-02-29",
+        "description": "ยกมาประจำงวด",
+        "period_no": 158,
+        "amount": 1000.00,
+        "balance": 207000.00
+      },
+      {
+        "date": "2559-01-31",
+        "description": "ยกมาประจำงวด",
+        "period_no": 157,
+        "amount": 1000.00,
+        "balance": 206000.00
+      },
+      {
+        "date": "2558-12-31",
+        "description": "ยกมาประจำงวด",
+        "period_no": 156,
+        "amount": 1000.00,
+        "balance": 205000.00
+      },
+      {
+        "date": "2558-11-30",
+        "description": "ยกมาประจำงวด",
+        "period_no": 155,
+        "amount": 1000.00,
+        "balance": 204000.00
+      }
+    ]
+  },
+  "deposit_accounts": [
+    {
+      "account_no": "10-00001049",
+      "account_type": "เงินฝากออมทรัพย์",
+      "type_badge": "ออมทรัพย์",
+      "status": "ปกติ",
+      "balance": 1416.03,
+      "statement": [
+        {
+          "date": "2559-02-15",
+          "description": "ฝากเงินสด",
+          "amount": 500.00,
+          "balance": 1416.03
+        },
+        {
+          "date": "2559-01-15",
+          "description": "ฝากเงินสด",
+          "amount": 500.00,
+          "balance": 916.03
+        },
+        {
+          "date": "2558-12-31",
+          "description": "ดอกเบี้ยเงินฝาก",
+          "amount": 16.03,
+          "balance": 416.03
+        }
+      ]
+    },
+    {
+      "account_no": "10-00001138",
+      "account_type": "เงินฝากออมทรัพย์พิเศษ",
+      "type_badge": "ออมทรัพย์พิเศษ",
+      "status": "ปกติ",
+      "balance": 20105.74
+    },
+    {
+      "account_no": "10-00001859",
+      "account_type": "เงินฝากประจำ 12 เดือน",
+      "type_badge": "ฝากประจำ 12M",
+      "status": "ปกติ",
+      "balance": 67936.63
+    }
+  ],
+  "loans_detail": {
+    "active_contracts_count": 1,
+    "contracts": [
+      {
+        "contract_no": "200-2558000672",
+        "loan_type": "เงินกู้สามัญ",
+        "credit_limit": 350000.00,
+        "balance_principal": 311400.00,
+        "payment_history": [
+          {
+            "date": "2559-02-29",
+            "description": "ภาระประจำงวด",
+            "principal_paid": 5900.00,
+            "interest_paid": 1525.29,
+            "remaining_balance": 311400.00
+          },
+          {
+            "date": "2559-01-31",
+            "description": "ภาระประจำงวด",
+            "principal_paid": 5900.00,
+            "interest_paid": 1550.00,
+            "remaining_balance": 317300.00
+          },
+          {
+            "date": "2558-12-28",
+            "description": "ชำระพิเศษ (โปะเพิ่ม)",
+            "principal_paid": 10000.00,
+            "interest_paid": 0.00,
+            "remaining_balance": 323200.00
+          }
+        ]
+      }
+    ]
+  },
+  "guarantees_detail": {
+    "total_guaranteed_amount": 509536.53,
+    "contracts": [
+      {
+        "loan_type": "เงินกู้สามัญ",
+        "contract_no": "219-2559000043",
+        "guaranteed_amount": 35000.00,
+        "borrower_status": "ชำระปกติ"
+      },
+      {
+        "loan_type": "เงินกู้พิเศษเพื่อการเคหะ",
+        "contract_no": "281-2558000013",
+        "guaranteed_amount": 474536.53,
+        "borrower_status": "ชำระปกติ"
+      }
+    ]
+  }
+}
