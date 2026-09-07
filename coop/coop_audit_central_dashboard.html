@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coop Insight | Dashboard กรมตรวจบัญชีสหกรณ์</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Sarabun',sans-serif;background:#f8fafc;color:#1e293b}
+  .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none;-ms-overflow-style:none}
+  .card-hover{transition:.2s ease}.card-hover:hover{transform:translateY(-2px);box-shadow:0 12px 28px -10px rgba(15,23,42,.18)}
+  .tab-active{background:#0d47a1!important;color:#fff!important;box-shadow:0 4px 12px rgba(13,71,161,.22)}
+  .filter-active{background:#002d56;color:#fff;border-color:#002d56}
+  .fade-in{animation:fade .22s ease}.bar{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}.bar>span{display:block;height:100%;border-radius:999px}
+  @keyframes fade{from{opacity:.5;transform:translateY(3px)}to{opacity:1;transform:none}}
+  .drawer{transform:translateX(100%);transition:.25s ease}.drawer.open{transform:translateX(0)}
+  @media print{.no-print{display:none!important}.print-full{max-width:none!important}.shadow-sm,.shadow-lg{box-shadow:none!important}}
+</style>
+</head>
+<body class="min-h-screen antialiased">
+<header class="sticky top-0 z-50 bg-[#002d56] text-white shadow-lg no-print">
+  <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-extrabold text-lg border border-white/20 shadow">CA</div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap"><h1 class="text-base sm:text-lg font-bold tracking-tight">Coop Insight</h1><span class="text-[10px] px-2 py-0.5 rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200 font-semibold">กรมตรวจบัญชีสหกรณ์</span></div>
+          <p class="text-[11px] text-slate-300">ศูนย์ข้อมูลภาพรวมสหกรณ์จาก Dashboard ของแต่ละสหกรณ์</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="hidden xl:block text-right mr-2"><div class="text-[10px] text-slate-300">ข้อมูลอัปเดตล่าสุด</div><div class="text-xs font-semibold text-amber-300">7 กันยายน 2569 • 18:30 น.</div></div>
+        <button class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold">📄 Export csv</button>        
+        <button onclick="printDashboard()" class="bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold">📄 พิมพ์ / PDF</button>
+        <button class="bg-red-600/90 hover:bg-red-600 rounded-xl px-3 py-2 text-xs font-semibold">ออกจากระบบ</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5 print-full">
+  <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 no-print">
+    <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+      <div>
+        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Dashboard ภาพรวมสหกรณ์ไทย</h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">มุมมองระดับประเทศ พร้อม Drill down ถึงภาค ประเภทสหกรณ์ และรายสหกรณ์</p>
+      </div>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <button class="filter-btn filter-active px-3 py-2 rounded-xl border" data-scope="national" onclick="setScope('national')">ประเทศ</button>
+        <button class="filter-btn px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50" data-scope="region" onclick="setScope('region')">ภาค</button>
+        <button class="filter-btn px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50" data-scope="type" onclick="setScope('type')">ประเภทสหกรณ์</button>
+        <button class="filter-btn px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50" data-scope="coop" onclick="setScope('coop')">รายสหกรณ์</button>
+      </div>
+    </div>
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <select id="regionFilter" onchange="applyFilters()" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="all">ทุกภาค</option><option>กลาง</option><option>เหนือ</option><option>ตะวันออกเฉียงเหนือ</option><option>ใต้</option></select>
+      <select id="typeFilter" onchange="applyFilters()" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="all">ทุกประเภทสหกรณ์</option><option>การเกษตร</option><option>ออมทรัพย์</option><option>เครดิตยูเนี่ยน</option><option>ประมง</option><option>ร้านค้า</option><option>บริการ</option></select>
+      <select id="periodFilter" onchange="applyFilters()" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option>ปีบัญชี 2569</option><option>ปีบัญชี 2568</option><option>ปีบัญชี 2567</option></select>
+      <input id="searchCoop" oninput="renderCoopTable()" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm" placeholder="ค้นหาชื่อ/รหัสสหกรณ์...">
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm card-hover"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500">สหกรณ์ทั้งหมด</span><span class="p-2 rounded-xl bg-blue-50 text-blue-700">🏢</span></div><div id="kpiCoops" class="text-3xl font-extrabold text-slate-900 mt-3">6,428</div><div class="text-xs text-emerald-600 font-semibold mt-1">↑ 1.8% จากปีก่อน</div></div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm card-hover"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500">สมาชิกทั้งหมด</span><span class="p-2 rounded-xl bg-amber-50 text-amber-700">👥</span></div><div class="text-3xl font-extrabold text-slate-900 mt-3">12.84 ล้าน</div><div class="text-xs text-emerald-600 font-semibold mt-1">↑ 2.4% YoY</div></div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm card-hover"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500">สินทรัพย์รวม</span><span class="p-2 rounded-xl bg-emerald-50 text-emerald-700">💰</span></div><div class="text-3xl font-extrabold text-slate-900 mt-3">3.92 ล้าน ลบ.</div><div class="text-xs text-emerald-600 font-semibold mt-1">↑ 5.6% YoY</div></div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm card-hover"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500">เงินกู้คงเหลือ</span><span class="p-2 rounded-xl bg-rose-50 text-rose-700">📄</span></div><div class="text-3xl font-extrabold text-slate-900 mt-3">2.61 ล้าน ลบ.</div><div class="text-xs text-amber-600 font-semibold mt-1">↑ 3.2% YoY</div></div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm card-hover"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500">สถานะภาพรวม</span><span class="p-2 rounded-xl bg-indigo-50 text-indigo-700">🛡️</span></div><div class="text-3xl font-extrabold text-emerald-700 mt-3">91.7%</div><div class="text-xs text-slate-500 mt-1">อยู่ในกลุ่มปกติ/เฝ้าระวังต่ำ</div></div>
+  </section>
+
+  <section class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+    <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
+        <div><h3 class="font-bold text-slate-900">แนวโน้มผลการดำเนินงาน</h3><p id="trendSubtitle" class="text-xs text-slate-500 mt-0.5">ภาพรวมระดับประเทศ • 5 ปีบัญชี</p></div>
+        <div class="flex gap-1 text-[11px]"><span class="px-2 py-1 rounded bg-blue-50 text-blue-700">สินทรัพย์</span><span class="px-2 py-1 rounded bg-amber-50 text-amber-700">เงินฝาก</span><span class="px-2 py-1 rounded bg-rose-50 text-rose-700">เงินกู้</span></div>
+      </div>
+      <div class="h-[300px]"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h3 class="font-bold text-slate-900">โครงสร้างตามประเภทสหกรณ์</h3><p class="text-xs text-slate-500 mt-0.5">จำนวนสหกรณ์</p></div></div>
+      <div class="h-[300px]"><canvas id="typeChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h3 class="font-bold text-slate-900">เปรียบเทียบผลการดำเนินงานรายภาค</h3><p class="text-xs text-slate-500 mt-0.5">คะแนนภาพรวมจากตัวชี้วัดหลัก</p></div><span class="text-[11px] px-2 py-1 rounded-md bg-slate-100 text-slate-600">คลิกเพื่อ Drill down</span></div>
+      <div id="regionList" class="space-y-3"></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h3 class="font-bold text-slate-900">ประเด็นเฝ้าระวัง</h3><p class="text-xs text-slate-500 mt-0.5">รายการที่ควรติดตามจากข้อมูลรวม</p></div><span class="text-[11px] px-2 py-1 rounded-md bg-rose-50 text-rose-700">ต้องติดตาม</span></div>
+      <div class="space-y-3 text-sm">
+        <button onclick="openInsight('สภาพคล่อง')" class="w-full text-left p-3 rounded-xl border border-rose-100 bg-rose-50/60 hover:bg-rose-50"><div class="flex justify-between gap-3"><div class="font-bold text-rose-900">สภาพคล่องต่ำกว่าเกณฑ์</div><span class="text-xs font-bold text-rose-700">128 แห่ง</span></div><div class="text-xs text-slate-600 mt-1">กระจุกตัวในสหกรณ์การเกษตรบางจังหวัด</div></button>
+        <button onclick="openInsight('ลูกหนี้ค้างชำระ')" class="w-full text-left p-3 rounded-xl border border-amber-100 bg-amber-50/60 hover:bg-amber-50"><div class="flex justify-between gap-3"><div class="font-bold text-amber-900">ลูกหนี้ค้างชำระสูงขึ้น</div><span class="text-xs font-bold text-amber-700">214 แห่ง</span></div><div class="text-xs text-slate-600 mt-1">แนวโน้มเพิ่มขึ้น 4.1% จากปีบัญชีก่อน</div></button>
+        <button onclick="openInsight('ขาดทุน')" class="w-full text-left p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100"><div class="flex justify-between gap-3"><div class="font-bold text-slate-800">ผลการดำเนินงานขาดทุน</div><span class="text-xs font-bold text-slate-700">87 แห่ง</span></div><div class="text-xs text-slate-600 mt-1">สามารถเจาะดูรายสหกรณ์และปัจจัยประกอบได้</div></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
+      <div><h3 class="font-bold text-slate-900">ตารางรายสหกรณ์</h3><p id="tableSubtitle" class="text-xs text-slate-500 mt-0.5">เลือกแถวเพื่อดูรายละเอียดของสหกรณ์</p></div>
+      <div class="flex items-center gap-2"><span class="text-[11px] bg-slate-100 px-2 py-1 rounded-md text-slate-500">แสดง 8 จาก 6,428 แห่ง</span><button onclick="resetDrilldown()" class="text-xs font-semibold text-blue-800 hover:underline">รีเซ็ตมุมมอง</button></div>
+    </div>
+    <div class="overflow-x-auto rounded-xl border border-slate-200">
+      <table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-700 font-bold"><tr><th class="p-3">รหัส</th><th class="p-3">ชื่อสหกรณ์</th><th class="p-3">ภาค</th><th class="p-3">ประเภท</th><th class="p-3 text-right">สมาชิก</th><th class="p-3 text-right">สินทรัพย์ (ลบ.)</th><th class="p-3 text-center">ระดับความเสี่ยง</th><th class="p-3"></th></tr></thead><tbody id="coopTableBody" class="divide-y divide-slate-100"></tbody></table>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"><div class="flex justify-between"><span class="text-xs text-slate-500">ข้อมูลจากสหกรณ์ที่ส่งแล้ว</span><span class="font-bold text-emerald-700">97.3%</span></div><div class="bar mt-3"><span style="width:97.3%;background:#059669"></span></div></div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"><div class="flex justify-between"><span class="text-xs text-slate-500">ผ่านการตรวจสอบเบื้องต้น</span><span class="font-bold text-blue-700">94.8%</span></div><div class="bar mt-3"><span style="width:94.8%;background:#2563eb"></span></div></div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"><div class="flex justify-between"><span class="text-xs text-slate-500">พร้อมใช้สำหรับวิเคราะห์</span><span class="font-bold text-amber-700">92.1%</span></div><div class="bar mt-3"><span style="width:92.1%;background:#d97706"></span></div></div>
+  </section>
+
+  <footer class="text-center text-[11px] text-slate-500 pb-6 pt-1">Coop Insight • Prototype Dashboard • ข้อมูลตัวอย่างสำหรับการออกแบบหน้าจอ</footer>
+</main>
+
+<div id="drawerOverlay" class="fixed inset-0 bg-slate-950/40 hidden z-[60]" onclick="closeDrawer()"></div>
+<aside id="detailDrawer" class="drawer fixed right-0 top-0 h-full w-full max-w-xl bg-white z-[70] shadow-2xl overflow-y-auto">
+  <div class="sticky top-0 bg-[#002d56] text-white p-4 flex items-center justify-between"><div><div class="text-[11px] text-slate-300">รายละเอียดเชิงลึก</div><h3 id="drawerTitle" class="font-bold text-lg">สหกรณ์</h3></div><button onclick="closeDrawer()" class="text-white/80 hover:text-white text-2xl">×</button></div>
+  <div id="drawerBody" class="p-4 sm:p-5 space-y-4"></div>
+</aside>
+
+<div id="printArea" class="hidden"></div>
+
+<script>
+const coops=[
+ {id:'101001',name:'สหกรณ์การเกษตรรัตนบุรี จำกัด',region:'อีสาน',type:'การเกษตร',members:12840,assets:4280,risk:'ปกติ',province:'สุรินทร์',score:93},
+ {id:'101014',name:'สหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด',region:'กลาง',type:'ออมทรัพย์',members:6250,assets:8120,risk:'ต่ำ',province:'กรุงเทพมหานคร',score:97},
+ {id:'201123',name:'สหกรณ์ออมทรัพย์ครูนครเชียงใหม่ จำกัด',region:'เหนือ',type:'ออมทรัพย์',members:18642,assets:11240,risk:'ต่ำ',province:'เชียงใหม่',score:96},
+ {id:'301205',name:'สหกรณ์เครดิตยูเนี่ยนบ้านทะเลน้อย จำกัด',region:'ใต้',type:'เครดิตยูเนี่ยน',members:4320,assets:860,risk:'เฝ้าระวัง',province:'พัทลุง',score:82},
+ {id:'401551',name:'สหกรณ์ประมงชายฝั่งอ่าวไทย จำกัด',region:'ใต้',type:'ประมง',members:2140,assets:510,risk:'ปกติ',province:'สงขลา',score:89},
+ {id:'501771',name:'สหกรณ์การเกษตรแม่ริม จำกัด',region:'เหนือ',type:'การเกษตร',members:9675,assets:2350,risk:'ปกติ',province:'เชียงใหม่',score:91},
+ {id:'602331',name:'สหกรณ์ร้านค้าเมืองนครปฐม จำกัด',region:'กลาง',type:'ร้านค้า',members:3120,assets:640,risk:'เฝ้าระวัง',province:'นครปฐม',score:80},
+ {id:'702884',name:'สหกรณ์บริการเทคโนโลยีชุมชน จำกัด',region:'อีสาน',type:'บริการ',members:1580,assets:390,risk:'ต่ำ',province:'ขอนแก่น',score:95}
+];
+const regionData=[['กลาง',95,1680],['เหนือ',92,1410],['ตะวันออกเฉียงเหนือ',89,1880],['ใต้',90,1120]];
+let trendChart,typeChart,scope='national';
+function initCharts(){
+ const ctx=document.getElementById('trendChart'); trendChart=new Chart(ctx,{type:'line',data:{labels:['2565','2566','2567','2568','2569'],datasets:[
+  {label:'สินทรัพย์',data:[2.74,2.96,3.21,3.58,3.92],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',fill:true,tension:.35,borderWidth:2},
+  {label:'เงินฝาก',data:[1.84,1.95,2.11,2.29,2.48],borderColor:'#d97706',tension:.35,borderWidth:2},
+  {label:'เงินกู้',data:[1.91,2.02,2.18,2.38,2.61],borderColor:'#e11d48',tension:.35,borderWidth:2}
+ ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#e2e8f0'},ticks:{callback:v=>v+' ลบ.'}},x:{grid:{display:false}}}}});
+ const ctx2=document.getElementById('typeChart'); typeChart=new Chart(ctx2,{type:'doughnut',data:{labels:['การเกษตร','ออมทรัพย์','เครดิตยูเนี่ยน','ประมง','ร้านค้า','บริการ'],datasets:[{data:[2860,1240,610,188,410,1120],backgroundColor:['#1d4ed8','#d97706','#7c3aed','#0891b2','#059669','#64748b'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{font:{family:'Sarabun'},boxWidth:12,padding:12}}}}});
+}
+function renderRegions(){document.getElementById('regionList').innerHTML=regionData.map(([name,score,count])=>`<button onclick="drillRegion('${name}')" class="w-full text-left group"><div class="flex justify-between items-center text-xs mb-1.5"><span class="font-bold text-slate-800 group-hover:text-blue-800">ภาค${name}</span><span class="text-slate-500">${count.toLocaleString()} แห่ง • <b class="${score>=90?'text-emerald-700':'text-amber-700'}">${score}%</b></span></div><div class="bar"><span style="width:${score}%;background:${score>=90?'#059669':'#d97706'}"></span></div></button>`).join('');}
+function renderCoopTable(){
+ const q=document.getElementById('searchCoop').value.trim().toLowerCase(), r=document.getElementById('regionFilter').value,t=document.getElementById('typeFilter').value;
+ let rows=coops.filter(c=>(!q||c.name.toLowerCase().includes(q)||c.id.includes(q))&& (r==='all'||mapRegion(c.region)===r||c.region===r)&& (t==='all'||c.type===t));
+ document.getElementById('coopTableBody').innerHTML=rows.map(c=>`<tr class="hover:bg-slate-50 cursor-pointer" onclick="openCoop('${c.id}')"><td class="p-3 font-semibold text-blue-900">${c.id}</td><td class="p-3"><div class="font-bold text-slate-800">${c.name}</div><div class="text-[11px] text-slate-500">${c.province}</div></td><td class="p-3">${mapRegion(c.region)}</td><td class="p-3">${c.type}</td><td class="p-3 text-right">${c.members.toLocaleString()}</td><td class="p-3 text-right font-semibold">${c.assets.toLocaleString()}</td><td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-[11px] font-bold ${riskClass(c.risk)}">${c.risk}</span></td><td class="p-3 text-right text-blue-800 font-semibold">ดู →</td></tr>`).join('')||`<tr><td colspan="8" class="p-8 text-center text-slate-400">ไม่พบข้อมูลที่ตรงกับตัวกรอง</td></tr>`;
+}
+function mapRegion(r){return r==='อีสาน'?'ตะวันออกเฉียงเหนือ':r}
+function riskClass(r){return r==='ต่ำ'?'bg-emerald-100 text-emerald-800':r==='ปกติ'?'bg-blue-100 text-blue-800':'bg-amber-100 text-amber-800'}
+function setScope(s){scope=s;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('filter-active',b.dataset.scope===s));document.getElementById('trendSubtitle').innerText=s==='national'?'ภาพรวมระดับประเทศ • 5 ปีบัญชี':s==='region'?'มุมมองเปรียบเทียบรายภาค':'มุมมอง '+(s==='type'?'ตามประเภทสหกรณ์':'รายสหกรณ์');if(s==='region'){document.getElementById('regionFilter').value='all'};renderCoopTable();}
+function applyFilters(){renderCoopTable()}
+function resetDrilldown(){document.getElementById('regionFilter').value='all';document.getElementById('typeFilter').value='all';document.getElementById('searchCoop').value='';setScope('national')}
+function drillRegion(name){document.getElementById('regionFilter').value=name;setScope('region');document.getElementById('tableSubtitle').innerText='Drill down: ภาค'+name;document.querySelector('section.bg-white.rounded-2xl.border').scrollIntoView({behavior:'smooth'});}
+function openCoop(id){const c=coops.find(x=>x.id===id);if(!c)return;openDrawer(c.name,`<div class="grid grid-cols-2 gap-3"><div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="text-[11px] text-slate-500">รหัสสหกรณ์</div><div class="font-bold text-blue-900">${c.id}</div></div><div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="text-[11px] text-slate-500">จังหวัด</div><div class="font-bold">${c.province}</div></div><div class="p-3 rounded-xl bg-blue-50 border border-blue-100"><div class="text-[11px] text-slate-500">สมาชิก</div><div class="text-xl font-extrabold text-blue-900">${c.members.toLocaleString()}</div></div><div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100"><div class="text-[11px] text-slate-500">สินทรัพย์</div><div class="text-xl font-extrabold text-emerald-800">${c.assets.toLocaleString()} ลบ.</div></div></div><div class="p-4 rounded-xl border border-slate-200"><div class="flex justify-between text-sm"><span>คะแนนภาพรวม</span><b>${c.score}/100</b></div><div class="bar mt-2"><span style="width:${c.score}%;background:#0d47a1"></span></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500">แนวโน้มสินทรัพย์</div><div class="text-lg font-bold text-emerald-700">↑ 6.2%</div><div class="text-[11px] text-slate-500 mt-1">จากปีบัญชีก่อน</div></div><div class="p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500">แนวโน้มลูกหนี้</div><div class="text-lg font-bold text-amber-700">↑ 2.1%</div><div class="text-[11px] text-slate-500 mt-1">อยู่ในระดับเฝ้าระวัง</div></div></div><button onclick="openInsight('รายงานตรวจสอบ ${c.name}')" class="w-full rounded-xl bg-[#002d56] text-white py-3 font-bold hover:bg-[#0d47a1]">เปิดมุมมองวิเคราะห์เชิงลึก</button>`)}
+function openInsight(title){openDrawer(title,`<div class="p-4 rounded-xl bg-slate-50 border border-slate-200"><div class="text-xs text-slate-500">Insight</div><div class="text-xl font-extrabold mt-1">${title}</div><p class="text-sm text-slate-600 mt-2">ส่วนนี้เป็นต้นแบบสำหรับแสดงรายละเอียด ตัวชี้วัดที่เกี่ยวข้อง แนวโน้ม และรายชื่อสหกรณ์ที่เป็นกลุ่มเป้าหมาย สามารถเชื่อมต่อข้อมูลจริงจากระบบส่วนกลางได้</p></div><div class="space-y-3"><div class="p-3 rounded-xl border border-slate-200"><div class="flex justify-between text-sm"><span>ระดับประเทศ</span><b>91.7%</b></div><div class="bar mt-2"><span style="width:91.7%;background:#2563eb"></span></div></div><div class="p-3 rounded-xl border border-slate-200"><div class="flex justify-between text-sm"><span>ภาคที่พบมากที่สุด</span><b>ตะวันออกเฉียงเหนือ</b></div><div class="text-xs text-slate-500 mt-1">ควรเจาะต่อถึงจังหวัดและรายสหกรณ์</div></div></div>`)}
+function openDrawer(title,html){document.getElementById('drawerTitle').innerText=title;document.getElementById('drawerBody').innerHTML=html;document.getElementById('drawerOverlay').classList.remove('hidden');document.getElementById('detailDrawer').classList.add('open')}
+function closeDrawer(){document.getElementById('detailDrawer').classList.remove('open');document.getElementById('drawerOverlay').classList.add('hidden')}
+function printDashboard(){window.print()}
+document.addEventListener('DOMContentLoaded',()=>{initCharts();renderRegions();renderCoopTable()});
+</script>
+</body>
+</html>
