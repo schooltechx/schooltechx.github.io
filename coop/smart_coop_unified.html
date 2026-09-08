@@ -30,24 +30,12 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         /* Role toggle switch */
         .role-toggle-btn { transition: all .2s ease-in-out; }
-
-        /* Smart Coop additions */
-        .font-scale-bar button.active-scale { background:#0d47a1; color:#fff; border-color:#0d47a1; }
-        .service-card { transition: all .2s ease; }
-        .service-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(0,0,0,.12); }
-        .status-step { position:relative; }
-        .status-step:not(:last-child)::after { content:''; position:absolute; top:18px; left:50%; width:100%; height:2px; background:#e2e8f0; z-index:0; }
-        .status-step.done:not(:last-child)::after { background:#10b981; }
-        .status-dot { position:relative; z-index:1; }
-        .print-only { display:none; }
-        @media print {
-            body { background:#fff !important; }
-            #view-login, header, #view-member, #view-admin, #view-staff, #view-systemadmin, footer, .no-print { display:none !important; }
-            .print-only { display:block !important; }
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col text-slate-800 bg-slate-50 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Global Toast Notification -->
+    <div id="toastWrap" class="fixed top-4 right-4 z-[100] space-y-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none"></div>
 
     <!-- ============================= LOGIN SCREEN ============================= -->
     <div id="view-login" class="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-[#002d56] via-[#003c71] to-[#00284d] px-4 py-10">
@@ -145,13 +133,28 @@
                             📅 18 มีนาคม 2559
                         </span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <!-- Role Switcher -->
-                        <button id="roleToggleBtn" onclick="toggleRole()" class="role-toggle-btn bg-amber-500 hover:bg-amber-400 active:scale-95 text-xs text-[#002d56] px-3 py-2 rounded-xl transition duration-150 flex items-center gap-1.5 font-bold shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg>
-                            <span id="roleToggleLabel">เปลี่ยนบทบาท</span>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- Font Size / Accessibility Control -->
+                        <div class="flex items-center bg-white/10 border border-white/15 rounded-xl overflow-hidden" title="ปรับขนาดตัวอักษร">
+                            <button onclick="adjustFontSize(-1)" class="px-2.5 py-2 text-[11px] font-bold text-white hover:bg-white/15 active:scale-95 transition">ก<span class="text-[8px] align-top">-</span></button>
+                            <span id="fontSizeIndicator" class="px-1.5 text-[10px] text-amber-300 font-semibold border-x border-white/10">100%</span>
+                            <button onclick="adjustFontSize(1)" class="px-2.5 py-2 text-sm font-bold text-white hover:bg-white/15 active:scale-95 transition">ก<span class="text-[10px] align-top">+</span></button>
+                        </div>
+                        <!-- Notifications Bell (member) -->
+                        <button id="notifBellBtn" onclick="switchMemberTab('notify')" class="relative bg-white/10 hover:bg-white/20 active:scale-95 text-xs text-white p-2.5 rounded-xl border border-white/15 transition duration-150">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <span id="notifBellBadge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full items-center justify-center">0</span>
                         </button>
-                        <button onclick="openRoleMenu()" class="bg-white/10 hover:bg-white/20 active:scale-95 text-xs text-white px-3 py-2 rounded-xl border border-white/15 transition duration-150 font-medium">☰ เมนูงาน</button>
+                        <!-- Role Switcher (demo: switch between the 4 system roles) -->
+                        <div class="relative">
+                            <select id="roleSelect" onchange="switchRole(this.value)" class="appearance-none bg-amber-500 hover:bg-amber-400 active:scale-95 text-xs text-[#002d56] pl-3 pr-7 py-2.5 rounded-xl transition duration-150 font-bold shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300">
+                                <option value="member">มุมมองสมาชิก</option>
+                                <option value="staff">มุมมองเจ้าหน้าที่</option>
+                                <option value="admin">มุมมองผู้บริหาร</option>
+                                <option value="sysadmin">มุมมองผู้ดูแลระบบ</option>
+                            </select>
+                            <svg class="w-3.5 h-3.5 text-[#002d56] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
                         <button onclick="openModal('modalPassword')" class="bg-white/10 hover:bg-white/20 active:scale-95 text-xs text-white px-3 py-2 rounded-xl border border-white/15 transition duration-150 flex items-center gap-1.5 font-medium">
                             <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 002-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             <span class="hidden sm:inline">เปลี่ยนรหัสผ่าน</span>
@@ -258,68 +261,6 @@
         </section>
 
 
-
-        <!-- ============================= MEMBER SERVICE CENTER ============================= -->
-        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <span class="w-2.5 h-5 bg-amber-500 rounded-full"></span> ศูนย์บริการสมาชิก
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-1">ข่าวสาร การแจ้งเตือน ร้องเรียน และรายการที่ต้องดำเนินการ</p>
-                </div>
-                <div class="font-scale-bar flex items-center gap-1.5 text-xs" aria-label="ปรับขนาดตัวอักษร">
-                    <span class="text-slate-500 mr-1">ขนาดตัวอักษร</span>
-                    <button onclick="setFontScale('normal')" id="font-scale-normal" class="border border-slate-300 rounded-lg px-2.5 py-1.5 active-scale">ก</button>
-                    <button onclick="setFontScale('large')" id="font-scale-large" class="border border-slate-300 rounded-lg px-2.5 py-1.5">ก+</button>
-                    <button onclick="setFontScale('xlarge')" id="font-scale-xlarge" class="border border-slate-300 rounded-lg px-2.5 py-1.5">ก++</button>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
-                <button onclick="openServicePanel('news')" class="service-card text-left p-3.5 rounded-xl border border-blue-200 bg-blue-50/60">
-                    <div class="flex items-center justify-between"><span class="text-xl">📰</span><span class="text-[10px] bg-blue-600 text-white rounded-full px-2 py-0.5">3 ใหม่</span></div>
-                    <div class="font-bold text-sm text-blue-950 mt-2">ข่าวจากสหกรณ์</div><div class="text-[11px] text-slate-500 mt-1">ประกาศและข่าวสารล่าสุด</div>
-                </button>
-                <button onclick="openServicePanel('alerts')" class="service-card text-left p-3.5 rounded-xl border border-amber-200 bg-amber-50/70">
-                    <div class="flex items-center justify-between"><span class="text-xl">🔔</span><span class="text-[10px] bg-amber-500 text-white rounded-full px-2 py-0.5">2 ใหม่</span></div>
-                    <div class="font-bold text-sm text-amber-950 mt-2">การแจ้งเตือน</div><div class="text-[11px] text-slate-500 mt-1">ข้อความจากระบบและเจ้าหน้าที่</div>
-                </button>
-                <button onclick="openServicePanel('complaints')" class="service-card text-left p-3.5 rounded-xl border border-rose-200 bg-rose-50/70">
-                    <div class="flex items-center justify-between"><span class="text-xl">📣</span><span class="text-[10px] bg-rose-600 text-white rounded-full px-2 py-0.5">1 กำลังดำเนินการ</span></div>
-                    <div class="font-bold text-sm text-rose-950 mt-2">เรื่องร้องเรียน</div><div class="text-[11px] text-slate-500 mt-1">ส่งเรื่อง ติดตาม หรือยกเลิก</div>
-                </button>
-                <button onclick="openServicePanel('votes')" class="service-card text-left p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/70">
-                    <div class="flex items-center justify-between"><span class="text-xl">🗳️</span><span class="text-[10px] bg-indigo-600 text-white rounded-full px-2 py-0.5">เปิด 1 รายการ</span></div>
-                    <div class="font-bold text-sm text-indigo-950 mt-2">ระบบโหวต</div><div class="text-[11px] text-slate-500 mt-1">ลงคะแนนตามรอบที่สหกรณ์กำหนด</div>
-                </button>
-                <button onclick="downloadMemberPDF()" class="service-card text-left p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/70">
-                    <div class="flex items-center justify-between"><span class="text-xl">📄</span><span class="text-[10px] bg-emerald-600 text-white rounded-full px-2 py-0.5">PDF</span></div>
-                    <div class="font-bold text-sm text-emerald-950 mt-2">ข้อมูลของฉัน</div><div class="text-[11px] text-slate-500 mt-1">ดาวน์โหลดข้อมูลสมาชิกเป็น PDF</div>
-                </button>
-                <button onclick="openServicePanel('profile')" class="service-card text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50">
-                    <div class="flex items-center justify-between"><span class="text-xl">👤</span><span class="text-[10px] bg-slate-700 text-white rounded-full px-2 py-0.5">ข้อมูลส่วนตัว</span></div>
-                    <div class="font-bold text-sm text-slate-900 mt-2">ข้อมูลสมาชิก</div><div class="text-[11px] text-slate-500 mt-1">ตรวจสอบข้อมูลและช่องทางติดต่อ</div>
-                </button>
-            </div>
-            <div id="member-service-preview" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-                    <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-sm text-slate-900">ข่าวล่าสุด</h3><button onclick="openServicePanel('news')" class="text-xs font-semibold text-blue-700">ดูทั้งหมด</button></div>
-                    <div class="space-y-2">
-                        <div class="p-3 bg-white rounded-lg border border-slate-100"><div class="text-xs font-bold">ประกาศผลการดำเนินงานประจำปี 2568</div><div class="text-[11px] text-slate-500 mt-1">เผยแพร่ 18 มี.ค. 2568</div></div>
-                        <div class="p-3 bg-white rounded-lg border border-slate-100"><div class="text-xs font-bold">กำหนดการประชุมใหญ่สามัญประจำปี</div><div class="text-[11px] text-slate-500 mt-1">เผยแพร่ 12 มี.ค. 2568</div></div>
-                    </div>
-                </div>
-                <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
-                    <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-sm text-slate-900">รายการที่ต้องดำเนินการ</h3><span class="text-[10px] bg-amber-100 text-amber-800 rounded-full px-2 py-1">3 รายการ</span></div>
-                    <div class="space-y-2 text-xs">
-                        <button onclick="openServicePanel('votes')" class="w-full text-left p-3 bg-white rounded-lg border border-slate-100 hover:border-indigo-200">🗳️ โหวต: เลือกกรรมการดำเนินการ ชุดที่ 37 <span class="text-indigo-700 font-bold float-right">ลงคะแนน</span></button>
-                        <button onclick="openServicePanel('alerts')" class="w-full text-left p-3 bg-white rounded-lg border border-slate-100 hover:border-amber-200">🔔 อ่านประกาศจากเจ้าหน้าที่ <span class="text-amber-700 font-bold float-right">2 ฉบับ</span></button>
-                        <button onclick="openServicePanel('complaints')" class="w-full text-left p-3 bg-white rounded-lg border border-slate-100 hover:border-rose-200">📣 ตรวจสอบสถานะเรื่องร้องเรียน SC-2568-001 <span class="text-rose-700 font-bold float-right">ติดตาม</span></button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- Tab Bar Navigation (Responsive Mobile Scrollable Tabbar) -->
         <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-1.5 sm:p-2 sticky top-[96px] z-40">
             <nav class="flex space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar" aria-label="Tabs">
@@ -353,11 +294,47 @@
                     <span>สอบถาม AI Assistant</span>
                 </button>
                 -->
+
+                <span class="w-px h-6 bg-slate-200 self-center mx-1 shrink-0"></span>
+
+                <button id="tab-btn-news" onclick="switchMemberTab('news')" class="tab-btn px-3.5 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap transition duration-150 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2zM19 20H5m14 0a2 2 0 002-2V8a2 2 0 00-2-2h-3m0 8h.01M17 8v4m-9-4h4v4H8V8z"/></svg>
+                    <span>ข่าวสารสหกรณ์</span>
+                </button>
+
+                <button id="tab-btn-notify" onclick="switchMemberTab('notify')" class="tab-btn px-3.5 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap transition duration-150 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <span>การแจ้งเตือน</span>
+                    <span id="notifTabBadge" class="hidden bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full items-center justify-center">0</span>
+                </button>
+
+                <button id="tab-btn-complaint" onclick="switchMemberTab('complaint')" class="tab-btn px-3.5 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap transition duration-150 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>เรื่องร้องเรียน</span>
+                </button>
+
+                <button id="tab-btn-vote" onclick="switchMemberTab('vote')" class="tab-btn px-3.5 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap transition duration-150 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>ระบบโหวต</span>
+                </button>
             </nav>
         </section>
 
         <!-- TAB CONTENT 1: ภาพรวม (Overview) -->
         <div id="tab-content-overview" class="tab-pane space-y-6">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="p-2 bg-blue-50 text-blue-800 rounded-xl"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></span>
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">เอกสารสรุปข้อมูลส่วนบุคคล</p>
+                        <p class="text-[11px] text-slate-500">ดาวน์โหลดข้อมูลหุ้น เงินฝาก เงินกู้ และค้ำประกันของท่านเป็นไฟล์ PDF</p>
+                    </div>
+                </div>
+                <button onclick="downloadMemberPDF()" class="bg-[#002d56] hover:bg-[#0d47a1] active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center justify-center gap-2 shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    ดาวน์โหลดข้อมูลของฉัน (PDF)
+                </button>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Financial Breakdown Chart -->
                 <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1 flex flex-col justify-between">
@@ -711,6 +688,61 @@
             </div>
         </div>
 
+        <!-- TAB CONTENT: ข่าวสารสหกรณ์ -->
+        <div id="tab-content-news" class="tab-pane hidden space-y-5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h2 class="font-bold text-slate-800 text-base flex items-center gap-2 mb-1">
+                    <span class="w-2 h-5 bg-sky-600 rounded-full"></span> ข่าวสารและประกาศจากสหกรณ์
+                </h2>
+                <p class="text-xs text-slate-500 mb-4">ข่าวสาร ประกาศ และกิจกรรมล่าสุดจากทางสหกรณ์</p>
+                <div id="newsListMember" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT: การแจ้งเตือน -->
+        <div id="tab-content-notify" class="tab-pane hidden space-y-5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <span class="w-2 h-5 bg-amber-500 rounded-full"></span> การแจ้งเตือนของฉัน
+                    </h2>
+                    <button onclick="markAllNotifsRead()" class="text-[11px] font-semibold text-blue-700 hover:underline">อ่านทั้งหมดแล้ว</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">ข้อความจากระบบอัตโนมัติ และข้อความที่ส่งโดยเจ้าหน้าที่สหกรณ์</p>
+                <div id="notifListMember" class="space-y-2.5"></div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT: เรื่องร้องเรียน -->
+        <div id="tab-content-complaint" class="tab-pane hidden space-y-5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <span class="w-2 h-5 bg-orange-500 rounded-full"></span> เรื่องร้องเรียนของฉัน
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">ส่งเรื่องร้องเรียนถึงสหกรณ์ และติดตามสถานะการดำเนินการ</p>
+                    </div>
+                    <button onclick="openNewComplaintModal()" class="bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center justify-center gap-2 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        แจ้งเรื่องร้องเรียนใหม่
+                    </button>
+                </div>
+                <div id="complaintListMember" class="space-y-3 mt-4"></div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT: ระบบโหวต -->
+        <div id="tab-content-vote" class="tab-pane hidden space-y-5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h2 class="font-bold text-slate-800 text-base flex items-center gap-2 mb-1">
+                    <span class="w-2 h-5 bg-emerald-600 rounded-full"></span> ระบบโหวต / ลงมติ
+                </h2>
+                <p class="text-xs text-slate-500 mb-4">ใช้สิทธิ์ลงคะแนนเลือกกรรมการ หรือรับรองข้อมูลทางการเงินของสหกรณ์</p>
+                <div id="voteListMember" class="space-y-4"></div>
+            </div>
+        </div>
+
         <!-- TAB CONTENT 6: สอบถาม AI Assistant -->
         <div id="tab-content-ai" class="tab-pane hidden space-y-5">
             <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[550px]">
@@ -784,9 +816,10 @@
                         <div class="text-[10px] text-slate-300">ทุนดำเนินงานรวม</div>
                         <div class="text-amber-400 font-bold text-xs">2,450.50 ล้านบาท</div>
                     </div>
-                    <div class="px-3 py-1 rounded-lg text-right">
-                        <button onclick="downloadCoopPDF()" class="bg-amber-500 hover:bg-amber-400 text-[#002d56] text-xs font-bold px-3 py-2 rounded-xl">📄 ดาวน์โหลดข้อมูลสหกรณ์ PDF</button>
-                    </div>
+                    <button onclick="downloadCoopPDF()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-[#002d56] text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                        <span class="hidden sm:inline">ดาวน์โหลดรายงานสหกรณ์ (PDF)</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -844,65 +877,209 @@
         </main>
     </div>
 
-
-    <!-- ============================= STAFF VIEW ============================= -->
+    <!-- ============================= STAFF (เจ้าหน้าที่) VIEW ============================= -->
     <div id="view-staff" class="hidden">
-        <div class="bg-[#003c71] border-b border-cyan-500/20">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2 text-white">
-                <div><div class="text-sm font-bold">Staff Workspace • ศูนย์ปฏิบัติการเจ้าหน้าที่</div><div class="text-[11px] text-slate-300">จัดการข่าว ร้องเรียน โหวต การแจ้งเตือน และค้นหาสมาชิก</div></div>
-                <button onclick="downloadCoopPDF()" class="bg-amber-500 hover:bg-amber-400 text-[#002d56] text-xs font-bold px-3 py-2 rounded-xl">📄 ดาวน์โหลดข้อมูลสหกรณ์ PDF</button>
+        <div class="bg-[#0a4a3a] border-b border-emerald-500/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2 text-white">
+                <div class="flex items-center gap-2">
+                    <div class="bg-emerald-600 p-1.5 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <span class="text-sm font-bold">Staff Operations Panel • ระบบปฏิบัติงานเจ้าหน้าที่</span>
+                </div>
+                <div class="flex gap-3 text-[11px]">
+                    <div class="bg-[#083b2e] border border-emerald-500/30 px-3 py-1 rounded-lg text-right">
+                        <div class="text-slate-300">เรื่องร้องเรียนรอดำเนินการ</div>
+                        <div id="staffPendingCount" class="text-amber-300 font-bold">0 รายการ</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
-            <section class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm"><div class="text-[11px] text-slate-500">ข่าวที่เผยแพร่</div><div class="text-2xl font-extrabold mt-1">18</div><div class="text-[11px] text-emerald-600">2 ฉบับรอเผยแพร่</div></div>
-                <div class="bg-white border border-rose-200 p-4 rounded-xl shadow-sm"><div class="text-[11px] text-slate-500">ร้องเรียนค้าง</div><div class="text-2xl font-extrabold mt-1 text-rose-700">7</div><div class="text-[11px] text-rose-600">3 เรื่องเกิน SLA</div></div>
-                <div class="bg-white border border-indigo-200 p-4 rounded-xl shadow-sm"><div class="text-[11px] text-slate-500">โหวตเปิดอยู่</div><div class="text-2xl font-extrabold mt-1 text-indigo-700">1</div><div class="text-[11px] text-indigo-600">ปิดรับ 25 มี.ค.</div></div>
-                <div class="bg-white border border-amber-200 p-4 rounded-xl shadow-sm"><div class="text-[11px] text-slate-500">แจ้งเตือนวันนี้</div><div class="text-2xl font-extrabold mt-1 text-amber-700">4</div><div class="text-[11px] text-amber-600">ส่งสำเร็จ 100%</div></div>
-                <div class="bg-white border border-blue-200 p-4 rounded-xl shadow-sm"><div class="text-[11px] text-slate-500">สมาชิกทั้งหมด</div><div class="text-2xl font-extrabold mt-1 text-blue-800">12,548</div><div class="text-[11px] text-emerald-600">เปิดใช้งาน 12,211 ราย</div></div>
-            </section>
 
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h2 class="font-bold text-base">📰 จัดการข่าวจากทางสหกรณ์</h2><p class="text-xs text-slate-500">สร้าง แก้ไข ตั้งเวลา และเผยแพร่ประกาศ</p></div><button onclick="staffAction('สร้างข่าวใหม่')" class="bg-[#002d56] text-white text-xs font-bold px-3 py-2 rounded-xl">+ เพิ่มข่าว</button></div>
-                    <div class="space-y-2 text-xs"><div class="p-3 rounded-xl border border-slate-100 flex justify-between gap-3"><div><b>ผลการดำเนินงานประจำปี 2568</b><div class="text-slate-500 mt-1">เผยแพร่แล้ว • 18 มี.ค. 2568</div></div><button onclick="staffAction('แก้ไขข่าวผลการดำเนินงาน')" class="text-blue-700 font-bold">แก้ไข</button></div><div class="p-3 rounded-xl border border-slate-100 flex justify-between gap-3"><div><b>กำหนดการประชุมใหญ่สามัญประจำปี</b><div class="text-amber-600 mt-1">ฉบับร่าง</div></div><button onclick="staffAction('เผยแพร่กำหนดการประชุมใหญ่')" class="text-emerald-700 font-bold">เผยแพร่</button></div></div>
+        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto flex overflow-x-auto p-2 gap-1 text-sm no-scrollbar">
+                <button onclick="switchStaffTab('news')" id="stbtn-news" class="tab-btn tab-active px-4 py-2 rounded-md transition whitespace-nowrap">จัดการข่าวสาร</button>
+                <button onclick="switchStaffTab('complaint')" id="stbtn-complaint" class="tab-btn px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">จัดการเรื่องร้องเรียน</button>
+                <button onclick="switchStaffTab('vote')" id="stbtn-vote" class="tab-btn px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">จัดการระบบโหวต</button>
+                <button onclick="switchStaffTab('notify')" id="stbtn-notify" class="tab-btn px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">ส่งการแจ้งเตือน</button>
+                <button onclick="switchStaffTab('search')" id="stbtn-search" class="tab-btn px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">ค้นหาสมาชิก</button>
+                <button onclick="switchStaffTab('strategy')" id="stbtn-strategy" class="tab-btn px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">จัดการยุทธศาสตร์</button>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto p-4 space-y-4 w-full flex-grow">
+
+            <!-- STAFF: News management -->
+            <div id="staff-pane-news" class="staff-pane space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-sm">จัดการข่าวสาร/ประกาศของสหกรณ์</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">เพิ่ม แก้ไข หรือลบข่าวสารที่สมาชิกจะเห็นในหน้าแอปสมาชิก</p>
+                    </div>
+                    <button onclick="openNewsForm()" class="bg-sky-700 hover:bg-sky-800 active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        เพิ่มข่าวใหม่
+                    </button>
                 </div>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h2 class="font-bold text-base">🔔 ส่งแจ้งเตือนให้สมาชิก</h2><p class="text-xs text-slate-500">ส่งแบบรายบุคคลหรือประกาศทั้งกลุ่ม</p></div><button onclick="staffAction('สร้างการแจ้งเตือนใหม่')" class="bg-amber-500 text-[#002d56] text-xs font-bold px-3 py-2 rounded-xl">+ ส่งแจ้งเตือน</button></div>
-                    <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-2"><div class="flex justify-between"><span>กลุ่มเป้าหมาย</span><b>สมาชิกที่มีหนี้ครบกำหนด</b></div><div class="flex justify-between"><span>ผู้รับ</span><b>1,284 ราย</b></div><div class="flex justify-between"><span>ช่องทาง</span><b>Web + Mobile</b></div></div>
+                <div id="staffNewsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <!-- STAFF: Complaint management -->
+            <div id="staff-pane-complaint" class="staff-pane hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <h2 class="font-bold text-slate-800 text-sm">จัดการเรื่องร้องเรียนจากสมาชิก</h2>
+                        <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+                            <button onclick="filterStaffComplaints('all', event)" class="cfilter-btn cfilter-active text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-slate-800 text-white whitespace-nowrap">ทั้งหมด</button>
+                            <button onclick="filterStaffComplaints('pending', event)" class="cfilter-btn text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 whitespace-nowrap">รอรับเรื่อง</button>
+                            <button onclick="filterStaffComplaints('received', event)" class="cfilter-btn text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 whitespace-nowrap">รับเรื่องแล้ว</button>
+                            <button onclick="filterStaffComplaints('done', event)" class="cfilter-btn text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 whitespace-nowrap">สำเร็จ</button>
+                            <button onclick="filterStaffComplaints('cancelled', event)" class="cfilter-btn text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 whitespace-nowrap">ยกเลิก</button>
+                        </div>
+                    </div>
+                    <div id="staffComplaintList" class="space-y-3"></div>
                 </div>
-            </section>
+            </div>
 
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4"><div><h2 class="font-bold text-base">📣 จัดการเรื่องร้องเรียน</h2><p class="text-xs text-slate-500">เปลี่ยนสถานะพร้อมบันทึกเหตุผลและประวัติการดำเนินงาน</p></div><div class="flex items-center gap-2"><select class="text-xs border border-slate-300 rounded-lg px-3 py-2"><option>ทุกสถานะ</option><option>รอ</option><option>รับเรื่อง</option><option>ยกเลิก</option><option>สำเร็จ</option></select><button onclick="staffAction('ส่งออกข้อมูลร้องเรียน')" class="text-xs border border-slate-300 px-3 py-2 rounded-lg font-semibold">ส่งออก</button></div></div>
-                <div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-xs"><thead class="bg-slate-100"><tr><th class="p-3 text-left">เลขที่</th><th class="p-3 text-left">สมาชิก</th><th class="p-3 text-left">หัวข้อ</th><th class="p-3 text-center">สถานะ</th><th class="p-3 text-left">อัปเดตล่าสุด</th><th class="p-3 text-right">จัดการ</th></tr></thead><tbody class="divide-y divide-slate-100"><tr><td class="p-3 font-bold text-blue-900">SC-2568-001</td><td class="p-3">ปัทมา พุฒวันเพ็ญ</td><td class="p-3">ขอชี้แจงรายการหักบัญชี</td><td class="p-3 text-center"><span class="px-2 py-1 rounded-full bg-amber-100 text-amber-800">รับเรื่อง</span></td><td class="p-3 text-slate-500">18 มี.ค. 2568</td><td class="p-3 text-right"><button onclick="staffAction('เปิด SC-2568-001')" class="text-blue-700 font-bold">เปิดเรื่อง</button></td></tr><tr><td class="p-3 font-bold text-blue-900">SC-2568-002</td><td class="p-3">สมชาย ใจดี</td><td class="p-3">ขอสำเนาเอกสารเงินกู้</td><td class="p-3 text-center"><span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">สำเร็จ</span></td><td class="p-3 text-slate-500">17 มี.ค. 2568</td><td class="p-3 text-right"><button onclick="staffAction('ดูผล SC-2568-002')" class="text-blue-700 font-bold">ดูผล</button></td></tr></tbody></table></div>
-            </section>
+            <!-- STAFF: Vote management -->
+            <div id="staff-pane-vote" class="staff-pane hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-sm">จัดการระบบโหวต / ลงมติ</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">สร้างวาระโหวต เช่น เลือกกรรมการ หรือรับรองข้อมูลการเงิน</p>
+                    </div>
+                    <button onclick="openVoteForm()" class="bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        สร้างวาระโหวตใหม่
+                    </button>
+                </div>
+                <div id="staffVoteList" class="space-y-4"></div>
+            </div>
 
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5"><div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h2 class="font-bold text-base">🗳️ จัดการระบบโหวต</h2><p class="text-xs text-slate-500">สร้างรายการ กำหนดช่วงเวลา และตรวจสอบผล</p></div><button onclick="staffAction('สร้างรายการโหวตใหม่')" class="bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded-xl">+ สร้างโหวต</button></div><div class="p-4 rounded-xl border border-indigo-100 bg-indigo-50/60 text-xs"><div class="flex justify-between"><b>เลือกกรรมการดำเนินการ ชุดที่ 37</b><span class="text-emerald-700 font-bold">เปิด</span></div><div class="grid grid-cols-3 gap-2 mt-3"><div><span class="text-slate-500">ผู้มีสิทธิ</span><b class="block">9,840</b></div><div><span class="text-slate-500">โหวตแล้ว</span><b class="block">6,218</b></div><div><span class="text-slate-500">อัตราการใช้สิทธิ</span><b class="block">63.2%</b></div></div></div></div>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5"><div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h2 class="font-bold text-base">🔎 ค้นหาสมาชิก</h2><p class="text-xs text-slate-500">ดูข้อมูลสมาชิกหรือส่งการแจ้งเตือนรายบุคคล</p></div></div><div class="flex gap-2"><input id="staffMemberSearch" placeholder="รหัสสมาชิก / ชื่อ / เลขบัตร" class="flex-1 text-xs border border-slate-300 rounded-xl px-3 py-2.5"><button onclick="searchStaffMember()" class="bg-[#002d56] text-white text-xs font-bold px-4 rounded-xl">ค้นหา</button></div><div id="staffMemberResult" class="mt-3 hidden"></div></div>
-            </section>
+            <!-- STAFF: Send notification -->
+            <div id="staff-pane-notify" class="staff-pane hidden space-y-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
+                    <h2 class="font-bold text-slate-800 text-sm mb-1">ส่งการแจ้งเตือนถึงสมาชิก</h2>
+                    <p class="text-xs text-slate-500 mb-4">ส่งข้อความแจ้งเตือนแบบกระจายถึงสมาชิกทั้งหมด หรือระบุสมาชิกรายบุคคล</p>
+                    <form onsubmit="sendStaffNotification(event)" class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">ผู้รับ</label>
+                            <select id="notifyTargetType" onchange="toggleNotifyTargetInput()" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                                <option value="all">สมาชิกทั้งหมด (Broadcast)</option>
+                                <option value="one">ระบุรหัสสมาชิก</option>
+                            </select>
+                        </div>
+                        <div id="notifyTargetIdWrap" class="hidden">
+                            <label class="text-xs font-semibold text-slate-600">รหัสสมาชิก</label>
+                            <input id="notifyTargetId" type="text" placeholder="เช่น 2536" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">หัวข้อ</label>
+                            <input id="notifyTitle" required type="text" placeholder="หัวข้อการแจ้งเตือน" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">ข้อความ</label>
+                            <textarea id="notifyBody" required rows="4" placeholder="รายละเอียดข้อความ..." class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold py-2.5 rounded-xl transition">ส่งการแจ้งเตือน</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STAFF: Member search -->
+            <div id="staff-pane-search" class="staff-pane hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="font-bold text-slate-800 text-sm mb-3">ค้นหาสมาชิก</h2>
+                    <div class="flex gap-2">
+                        <input id="staffMemberSearchInput" oninput="renderStaffMemberSearch()" type="text" placeholder="ค้นหาด้วยชื่อ หรือรหัสสมาชิก..." class="flex-1 text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                    </div>
+                    <div id="staffMemberSearchResult" class="mt-4 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- STAFF: Strategy & Governance management (feeds ผู้บริหาร > ยุทธศาสตร์ tab) -->
+            <div id="staff-pane-strategy" class="staff-pane hidden space-y-4">
+                <div class="bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-xl p-3">
+                    ℹ️ ข้อมูลในหน้านี้จะแสดงผลแบบอ่านอย่างเดียว (read-only) ในมุมมองผู้บริหาร แท็บ "ยุทธศาสตร์ & ธรรมาภิบาล" ทันทีที่บันทึก
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <h2 class="font-bold text-slate-800 text-sm">👑 แผนยุทธศาสตร์</h2>
+                        <button onclick="openStrategyForm()" class="bg-[#003c71] hover:bg-[#0d47a1] active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            เพิ่มยุทธศาสตร์
+                        </button>
+                    </div>
+                    <div id="staffStrategyList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <h2 class="font-bold text-slate-800 text-sm">📜 ระเบียบและโครงการสำคัญ</h2>
+                        <button onclick="openRegulationForm()" class="bg-[#003c71] hover:bg-[#0d47a1] active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            เพิ่มระเบียบ/ประกาศ
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left text-xs min-w-[720px]">
+                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                                <tr><th class="p-2.5">หมวดงาน</th><th class="p-2.5">ชื่อระเบียบ/ประกาศ</th><th class="p-2.5">วันลงนาม</th><th class="p-2.5">วัตถุประสงค์</th><th class="p-2.5 text-right">จัดการ</th></tr>
+                            </thead>
+                            <tbody id="staffRegulationTable" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <!-- ============================= SYSTEM ADMIN VIEW ============================= -->
-    <div id="view-systemadmin" class="hidden">
-        <div class="bg-slate-900 text-white"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row justify-between gap-2 items-center"><div><div class="text-sm font-bold">System Administration</div><div class="text-[11px] text-slate-400">จัดการสิทธิ์บัญชีผู้ใช้และสถานะการใช้งาน</div></div><span class="text-[11px] bg-emerald-500/15 text-emerald-300 border border-emerald-400/20 px-2.5 py-1 rounded-full">ระบบปกติ</span></div></div>
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-3"><div class="bg-white border border-slate-200 p-4 rounded-xl"><div class="text-[11px] text-slate-500">บัญชีผู้ใช้</div><div class="text-2xl font-extrabold">12,921</div></div><div class="bg-white border border-emerald-200 p-4 rounded-xl"><div class="text-[11px] text-slate-500">Enabled</div><div class="text-2xl font-extrabold text-emerald-700">12,211</div></div><div class="bg-white border border-rose-200 p-4 rounded-xl"><div class="text-[11px] text-slate-500">Disabled</div><div class="text-2xl font-extrabold text-rose-700">710</div></div><div class="bg-white border border-indigo-200 p-4 rounded-xl"><div class="text-[11px] text-slate-500">ผู้ดูแลระบบ</div><div class="text-2xl font-extrabold text-indigo-700">6</div></div></section>
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4"><div><h2 class="font-bold text-base">👤 ค้นหาและจัดการสมาชิก</h2><p class="text-xs text-slate-500">ดูข้อมูล กำหนดสิทธิ์ และ Enable / Disable บัญชี</p></div><div class="flex gap-2"><input id="adminMemberSearch" placeholder="ค้นหารหัสสมาชิกหรือชื่อ" class="text-xs border border-slate-300 rounded-xl px-3 py-2.5 w-64"><button onclick="searchAdminMember()" class="bg-[#002d56] text-white text-xs font-bold px-4 rounded-xl">ค้นหา</button></div></div><div id="adminMemberResult" class="space-y-3"><div class="p-4 rounded-xl border border-slate-100 bg-slate-50 text-xs text-slate-500">ค้นหาสมาชิกเพื่อแสดงข้อมูลบัญชีและสิทธิ์</div></div></section>
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold text-base mb-4">🛡️ สิทธิ์การใช้งานตามบทบาท</h2><div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-xs"><thead class="bg-slate-100"><tr><th class="p-3 text-left">บทบาท</th><th class="p-3 text-center">ดูข้อมูลสมาชิก</th><th class="p-3 text-center">จัดการข่าว</th><th class="p-3 text-center">จัดการร้องเรียน</th><th class="p-3 text-center">จัดการโหวต</th><th class="p-3 text-center">Admin</th></tr></thead><tbody class="divide-y divide-slate-100"><tr><td class="p-3 font-bold">สมาชิก</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">ดูอย่างเดียว</td><td class="p-3 text-center">ส่ง/ติดตาม</td><td class="p-3 text-center">ลงคะแนน</td><td class="p-3 text-center">—</td></tr><tr><td class="p-3 font-bold">เจ้าหน้าที่</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">—</td></tr><tr><td class="p-3 font-bold">ผู้บริหาร</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">ดู/อนุมัติ</td><td class="p-3 text-center">ดู/ติดตาม</td><td class="p-3 text-center">ดูผล</td><td class="p-3 text-center">—</td></tr><tr><td class="p-3 font-bold">ผู้ดูแลระบบ</td><td class="p-3 text-center">✓</td><td class="p-3 text-center">กำหนดสิทธิ์</td><td class="p-3 text-center">กำหนดสิทธิ์</td><td class="p-3 text-center">กำหนดสิทธิ์</td><td class="p-3 text-center">✓</td></tr></tbody></table></div></section>
+    <!-- ============================= SYSADMIN (ผู้ดูแลระบบ) VIEW ============================= -->
+    <div id="view-sysadmin" class="hidden">
+        <div class="bg-[#3b0764] border-b border-purple-500/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2 text-white">
+                <div class="flex items-center gap-2">
+                    <div class="bg-purple-600 p-1.5 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <span class="text-sm font-bold">System Administrator Panel • ระบบบริหารสิทธิ์ผู้ใช้งาน</span>
+                </div>
+                <div class="flex gap-3 text-[11px]">
+                    <div class="bg-[#2e0a55] border border-purple-500/30 px-3 py-1 rounded-lg text-right">
+                        <div class="text-slate-300">บัญชีผู้ใช้ทั้งหมด</div>
+                        <div id="sysadminUserCount" class="text-amber-300 font-bold">0 บัญชี</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main class="max-w-7xl mx-auto p-4 space-y-4 w-full flex-grow">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-sm">จัดการสิทธิ์ผู้ใช้งานระบบ</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">กำหนดบทบาท (สมาชิก / เจ้าหน้าที่ / ผู้บริหาร / ผู้ดูแลระบบ) และควบคุมสิทธิ์การเข้าใช้งาน</p>
+                    </div>
+                    <input id="sysadminSearchInput" oninput="renderSysadminUsers()" type="text" placeholder="ค้นหาด้วยชื่อ หรือรหัสสมาชิก..." class="w-full sm:w-72 text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-xs min-w-[860px]">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                            <tr>
+                                <th class="p-3">รหัสสมาชิก</th>
+                                <th class="p-3">ชื่อ-สกุล</th>
+                                <th class="p-3">บทบาทปัจจุบัน</th>
+                                <th class="p-3">สถานะการใช้งาน</th>
+                                <th class="p-3 text-right">การจัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sysadminUserTable" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
         </main>
     </div>
-
-    <!-- Role Menu -->
-    <div id="roleMenu" class="fixed inset-0 z-[60] hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-end sm:items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5"><div class="flex items-center justify-between mb-4"><div><h3 class="font-bold text-slate-900">เลือกมุมมองการทำงาน</h3><p class="text-xs text-slate-500 mt-1">ต้นแบบ UI สำหรับทดสอบสิทธิ์แต่ละบทบาท</p></div><button onclick="closeRoleMenu()" class="text-slate-400 text-lg">✕</button></div><div class="grid grid-cols-1 gap-2"><button onclick="setRole('member');closeRoleMenu()" class="p-3 rounded-xl border text-left hover:border-blue-300"><b>👤 สมาชิก</b><div class="text-[11px] text-slate-500">ข้อมูลส่วนตัว ข่าว แจ้งเตือน ร้องเรียน โหวต</div></button><button onclick="setRole('staff');closeRoleMenu()" class="p-3 rounded-xl border text-left hover:border-amber-300"><b>🧑‍💼 เจ้าหน้าที่</b><div class="text-[11px] text-slate-500">จัดการข่าว ร้องเรียน โหวต แจ้งเตือน และค้นสมาชิก</div></button><button onclick="setRole('executive');closeRoleMenu()" class="p-3 rounded-xl border text-left hover:border-indigo-300"><b>📊 ผู้บริหาร</b><div class="text-[11px] text-slate-500">Dashboard ผลการดำเนินงานและข้อมูลสหกรณ์</div></button><button onclick="setRole('systemadmin');closeRoleMenu()" class="p-3 rounded-xl border text-left hover:border-slate-400"><b>🛡️ ผู้ดูแลระบบ</b><div class="text-[11px] text-slate-500">ค้นหาสมาชิก กำหนดสิทธิ์ และ Enable/Disable</div></button></div></div></div>
-
-    <!-- Service Panel Modal -->
-    <div id="modalService" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"><div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl"><div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4"><div><h3 id="serviceTitle" class="font-bold text-slate-900">ศูนย์บริการสมาชิก</h3><p id="serviceSubtitle" class="text-xs text-slate-500 mt-1"></p></div><button onclick="closeModal('modalService')" class="text-slate-400">✕</button></div><div id="serviceBody"></div></div></div>
-
-    <div id="print-member" class="print-only"><h1>ข้อมูลสมาชิก Smart Coop</h1><p>ชื่อ: นางสาวปัทมา พุฒวันเพ็ญ</p><p>รหัสสมาชิก: 2536</p><p id="print-member-coop">สหกรณ์: สหกรณ์การเกษตรรัตนบุรี จำกัด</p><hr><h2>สรุปข้อมูลการเงิน</h2><p>ทุนเรือนหุ้น: 207,000.00 บาท</p><p>เงินฝาก: 89,458.40 บาท</p><p>เงินกู้คงเหลือ: 311,400.00 บาท</p><p>ภาระค้ำประกัน: 509,536.53 บาท</p></div>
-    <div id="print-coop" class="print-only"><h1>ข้อมูลสหกรณ์</h1><p>สหกรณ์การเกษตรรัตนบุรี จำกัด</p><h2>สรุปข้อมูล</h2><p>ทุนดำเนินงานรวม: 2,450.50 ล้านบาท</p><p>กำไรสุทธิ: 90.27 ล้านบาท</p><p>ทุนเรือนหุ้น: 1,120.00 ล้านบาท</p><p>เงินฝากสมาชิก: 1,180.30 ล้านบาท</p><p>NPL: 0.12%</p></div>
 
     <!-- Modal 1: Statement Details -->
     <div id="modalStatement" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -987,11 +1164,222 @@
         </div>
     </div>
 
+    <!-- Modal: New Complaint (Member) -->
+    <div id="modalNewComplaint" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">แจ้งเรื่องร้องเรียนใหม่</h3>
+                <button onclick="closeModal('modalNewComplaint')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <form onsubmit="submitComplaint(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หมวดหมู่</label>
+                    <select id="complaintCategory" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40">
+                        <option>บริการเจ้าหน้าที่</option>
+                        <option>ระบบเงินฝาก / เงินกู้</option>
+                        <option>ระบบสารสนเทศ / แอปพลิเคชัน</option>
+                        <option>อื่น ๆ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หัวข้อเรื่องร้องเรียน</label>
+                    <input id="complaintSubject" required type="text" placeholder="สรุปเรื่องสั้น ๆ" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">รายละเอียด</label>
+                    <textarea id="complaintDetail" required rows="4" placeholder="อธิบายรายละเอียดเรื่องที่ต้องการร้องเรียน..." class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalNewComplaint')" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">ยกเลิก</button>
+                    <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-xl font-bold text-sm">ส่งเรื่องร้องเรียน</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Complaint Detail / Status Tracking (Member) -->
+    <div id="modalComplaintDetail" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">รายละเอียดเรื่องร้องเรียน</h3>
+                <button onclick="closeModal('modalComplaintDetail')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <div id="complaintDetailBody" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Generic reason prompt (cancel / resolve with reason) -->
+    <div id="modalReason" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="modalReasonTitle" class="font-bold text-slate-900 text-base">ระบุเหตุผล</h3>
+                <button onclick="closeModal('modalReason')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <textarea id="modalReasonInput" rows="3" placeholder="กรอกเหตุผล..." class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400/40"></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('modalReason')" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">ยกเลิก</button>
+                <button id="modalReasonConfirmBtn" onclick="confirmReasonModal()" class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl font-bold text-sm">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: News detail (member) -->
+    <div id="modalNewsDetail" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-3 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">รายละเอียดข่าวสาร</h3>
+                <button onclick="closeModal('modalNewsDetail')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <div id="newsDetailBody"></div>
+        </div>
+    </div>
+
+    <!-- Modal: News add/edit (staff) -->
+    <div id="modalNewsForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="newsFormTitle" class="font-bold text-slate-900 text-base">เพิ่มข่าวใหม่</h3>
+                <button onclick="closeModal('modalNewsForm')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <form onsubmit="saveNews(event)" class="space-y-3">
+                <input type="hidden" id="newsFormId">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หมวดหมู่</label>
+                    <select id="newsFormCategory" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500/40">
+                        <option>ประกาศ</option>
+                        <option>กิจกรรม</option>
+                        <option>สวัสดิการ</option>
+                        <option>เงินปันผล</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หัวข้อข่าว</label>
+                    <input id="newsFormTitleInput" required type="text" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500/40">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">เนื้อหาข่าว</label>
+                    <textarea id="newsFormBody" required rows="4" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500/40"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalNewsForm')" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">ยกเลิก</button>
+                    <button type="submit" class="bg-sky-700 hover:bg-sky-800 text-white px-5 py-2 rounded-xl font-bold text-sm">บันทึกข่าว</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Vote form (staff) -->
+    <div id="modalVoteForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">สร้างวาระโหวตใหม่</h3>
+                <button onclick="closeModal('modalVoteForm')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <form onsubmit="saveVote(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หัวข้อวาระ</label>
+                    <input id="voteFormTitle" required type="text" placeholder="เช่น เลือกตั้งกรรมการดำเนินการ ชุดที่ 37" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">รายละเอียด</label>
+                    <textarea id="voteFormDesc" rows="2" placeholder="คำอธิบายวาระ..." class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">ตัวเลือก (คั่นแต่ละตัวเลือกด้วยการขึ้นบรรทัดใหม่ อย่างน้อย 2 ตัวเลือก)</label>
+                    <textarea id="voteFormOptions" required rows="4" placeholder="นายสมชาย ใจดี&#10;นางสาวสมหญิง รักงาน" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">วันปิดโหวต</label>
+                    <input id="voteFormDeadline" required type="date" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalVoteForm')" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">ยกเลิก</button>
+                    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-xl font-bold text-sm">สร้างวาระโหวต</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Member profile (staff / sysadmin) -->
+    <div id="modalMemberProfile" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">ข้อมูลสมาชิก</h3>
+                <button onclick="closeModal('modalMemberProfile')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <div id="memberProfileBody"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Strategy item form (staff) -->
+    <div id="modalStrategyForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="strategyFormTitle" class="font-bold text-slate-900 text-base">เพิ่มยุทธศาสตร์</h3>
+                <button onclick="closeModal('modalStrategyForm')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <form onsubmit="saveStrategy(event)" class="space-y-3">
+                <input type="hidden" id="strategyFormId">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หัวข้อยุทธศาสตร์</label>
+                    <input id="strategyFormTitleInput" required type="text" placeholder="เช่น ยุทธศาสตร์ที่ 4: ..." class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">รายละเอียด</label>
+                    <textarea id="strategyFormDesc" required rows="3" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalStrategyForm')" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">ยกเลิก</button>
+                    <button type="submit" class="bg-[#003c71] hover:bg-[#0d47a1] text-white px-5 py-2 rounded-xl font-bold text-sm">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Regulation form (staff) -->
+    <div id="modalRegulationForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="regulationFormTitle" class="font-bold text-slate-900 text-base">เพิ่มระเบียบ/ประกาศ</h3>
+                <button onclick="closeModal('modalRegulationForm')" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+            </div>
+            <form onsubmit="saveRegulation(event)" class="space-y-3">
+                <input type="hidden" id="regulationFormId">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">หมวดงาน</label>
+                    <select id="regulationFormCategory" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                        <option>การเงิน & สินเชื่อ</option>
+                        <option>สวัสดิการ</option>
+                        <option>ธรรมาภิบาล</option>
+                        <option>เทคโนโลยีสารสนเทศ</option>
+                        <option>อื่น ๆ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">ชื่อระเบียบ / ประกาศโครงการ</label>
+                    <input id="regulationFormTitleInput" required type="text" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">วันลงนาม</label>
+                    <input id="regulationFormDate" required type="date" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">วัตถุประสงค์เพื่อสมาชิก</label>
+                    <textarea id="regulationFormObjective" required rows="2" class="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modalRegulationForm')" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">ยกเลิก</button>
+                    <button type="submit" class="bg-[#003c71] hover:bg-[#0d47a1] text-white px-5 py-2 rounded-xl font-bold text-sm">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- Footer -->
     <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-4 border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 text-center space-y-1">
-            <p class="font-medium text-slate-300">ระบบสมาชิกและผู้บริหารสหกรณ์ (Smart Coop) • สามารถสลับดูได้ทั้งมุมมองสมาชิกและมุมมองผู้บริหาร</p>
+            <p class="font-medium text-slate-300">ระบบสมาชิกและผู้บริหารสหกรณ์ (Smart Coop) • สลับมุมมองได้ทั้งสมาชิก เจ้าหน้าที่ ผู้บริหาร และผู้ดูแลระบบ (สำหรับสาธิต)</p>
             <p class="text-[11px] text-slate-500">สหกรณ์การเกษตรรัตนบุรี จำกัด | สหกรณ์ออมทรัพย์กรมตรวจบัญชีสหกรณ์ จำกัด | Designed with Tailwind CSS</p>
         </div>
     </footer>
@@ -1150,12 +1538,14 @@
             document.getElementById('app-shell').classList.remove('flex');
             document.getElementById('view-login').classList.remove('hidden');
 
-            ['view-admin','view-staff','view-systemadmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById('view-member').classList.remove('hidden');
-            currentRole = 'member';
-            document.getElementById('roleBadge').innerText = 'สมาชิกสามัญ';
-            document.getElementById('roleBadge').className = roleMeta.member.cls;
-            document.getElementById('roleToggleLabel').innerText = 'เปลี่ยนบทบาท';
+            if (currentRole !== 'member') {
+                document.getElementById('view-' + (currentRole === 'admin' ? 'admin' : currentRole)).classList.add('hidden');
+                document.getElementById('view-member').classList.remove('hidden');
+                currentRole = 'member';
+                document.getElementById('roleBadge').innerText = 'สมาชิกสามัญ';
+                document.getElementById('roleBadge').className = 'bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full';
+                document.getElementById('roleSelect').value = 'member';
+            }
             destroyCharts();
             adminInitialized = false;
 
@@ -1168,32 +1558,64 @@
             renderCoopSelector();
         }
 
+        // ---- Toast Helper ----
+        function showToast(message, type) {
+            type = type || 'success';
+            const colors = {
+                success: 'bg-emerald-600',
+                error: 'bg-rose-600',
+                info: 'bg-blue-700'
+            };
+            const wrap = document.getElementById('toastWrap');
+            const el = document.createElement('div');
+            el.className = `${colors[type] || colors.success} text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl shadow-2xl pointer-events-auto flex items-center gap-2 animate-[fadeIn_.2s_ease-out]`;
+            el.innerHTML = `<span>${type === 'error' ? '⚠️' : (type === 'info' ? 'ℹ️' : '✅')}</span><span>${message}</span>`;
+            wrap.appendChild(el);
+            setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3200);
+        }
+
+        // ---- Accessibility: Font Size Control ----
+        let fontScale = 100;
+        function adjustFontSize(step) {
+            fontScale = Math.min(150, Math.max(85, fontScale + step * 10));
+            document.documentElement.style.fontSize = fontScale + '%';
+            document.getElementById('fontSizeIndicator').innerText = fontScale + '%';
+        }
+
         // ---- Role Switching Logic ----
         let currentRole = 'member';
         let adminInitialized = false;
+        let staffInitialized = false;
+        let sysadminInitialized = false;
 
-        function toggleRoleLegacy() {
-            if (currentRole === 'member') {
-                currentRole = 'admin';
-                document.getElementById('view-member').classList.add('hidden');
-                document.getElementById('view-admin').classList.remove('hidden');
-                document.getElementById('roleBadge').innerText = 'กรรมการดำเนินการ';
-                document.getElementById('roleBadge').className = 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full';
-                document.getElementById('roleToggleLabel').innerText = 'สลับไปมุมมองสมาชิก';
-                if (!adminInitialized) {
-                    switchAdminTab('tab1');
-                    adminInitialized = true;
-                }
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-                currentRole = 'member';
-                document.getElementById('view-admin').classList.add('hidden');
-                document.getElementById('view-member').classList.remove('hidden');
-                document.getElementById('roleBadge').innerText = 'สมาชิกสามัญ';
-                document.getElementById('roleBadge').className = 'bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full';
-                document.getElementById('roleToggleLabel').innerText = 'สลับไปมุมมองผู้บริหาร';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+        const ROLE_META = {
+            member:   { view: 'view-member',   badge: 'สมาชิกสามัญ',          badgeClass: 'bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' },
+            staff:    { view: 'view-staff',    badge: 'เจ้าหน้าที่สหกรณ์',     badgeClass: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' },
+            admin:    { view: 'view-admin',    badge: 'กรรมการดำเนินการ',      badgeClass: 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' },
+            sysadmin: { view: 'view-sysadmin', badge: 'ผู้ดูแลระบบ',           badgeClass: 'bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' }
+        };
+
+        function switchRole(role) {
+            // Hide current view
+            document.getElementById(ROLE_META[currentRole].view).classList.add('hidden');
+            currentRole = role;
+            const meta = ROLE_META[role];
+            document.getElementById(meta.view).classList.remove('hidden');
+            document.getElementById('roleBadge').innerText = meta.badge;
+            document.getElementById('roleBadge').className = meta.badgeClass;
+            document.getElementById('roleSelect').value = role;
+            // Member-only header controls
+            document.getElementById('notifBellBtn').classList.toggle('hidden', role !== 'member');
+
+            if (role === 'admin' && !adminInitialized) { switchAdminTab('tab1'); adminInitialized = true; }
+            if (role === 'staff') {
+                if (!staffInitialized) { switchStaffTab('news'); staffInitialized = true; }
+                renderStaffComplaints(); updateStaffPendingCount();
             }
+            if (role === 'sysadmin') { renderSysadminUsers(); }
+            if (role === 'member') { renderMemberFeatures(); }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // ---- Member View Logic ----
@@ -1224,6 +1646,11 @@
             if (tabId === 'overview' && !window.myOverviewChart) {
                 initChart();
             }
+
+            if (tabId === 'news') renderMemberNews();
+            if (tabId === 'notify') { renderMemberNotifications(); markAllNotifsRead(true); }
+            if (tabId === 'complaint') renderMemberComplaints();
+            if (tabId === 'vote') renderMemberVotes();
         }
 
         // Initialize Chart.js Donut Chart
@@ -1426,18 +1853,6 @@
                     { label: "เงินปันผลตามหุ้น (Dividend)", val: 55, amount: "49,650,825.15" },
                     { label: "เงินเฉลี่ยคืนตามส่วนธุรกิจ (Patronage)", val: 15, amount: "13,541,134.13" },
                     { label: "โบนัสกรรมการและเจ้าหน้าที่", val: 5, amount: "4,513,711.38" }
-                ]
-            },
-            tab6: {
-                strategies: [
-                    { title: "ยุทธศาสตร์ที่ 1: ยกระดับเสถียรภาพทางการเงิน", desc: "เพิ่มสัดส่วนทุนเรือนหุ้น บริหาร NPL ให้ต่ำกว่า 0.5% และบริหาร Asset-Liability Mismatch อย่างมีประสิทธิภาพ" },
-                    { title: "ยุทธศาสตร์ที่ 2: พัฒนาเทคโนโลยีดิจิทัล (Mobile App)", desc: "มุ่งสู่ Digital Coop อำนวยความสะดวกในการธุรกรรม ยื่นกู้ ถอนเงินฝาก ผ่านแอปพลิเคชันอย่างปลอดภัย" },
-                    { title: "ยุทธศาสตร์ที่ 3: สวัสดิการแบบพุ่งเป้าและยั่งยืน", desc: "ปรับปรุงกองทุนสวัสดิการเพื่อรองรับสังคมสูงวัยของสมาชิกบำนาญ พร้อมคุ้มครองภาระหนี้สิน" }
-                ],
-                regulations: [
-                    { category: "การเงิน & สินเชื่อ", title: "ระเบียบว่าด้วยการให้กู้ยืมเพื่อการเคหะ (ฉบับปรับปรุง 2568)", date: "15 ม.ค. 2568", objective: "ปรับลดดอกเบี้ยกู้บ้านเพื่อลดภาระค่าครองชีพสมาชิก" },
-                    { category: "สวัสดิการ", title: "ประกาศโครงการสวัสดิการเกษียณมีสุข 2568", date: "01 ก.พ. 2568", objective: "เพิ่มสิทธิประโยชน์การออมอัตราดอกเบี้ยพิเศษสำหรับผู้เกษียณ" },
-                    { category: "ธรรมาภิบาล", title: "หลักเกณฑ์การควบคุมภายในและบริหารความเสี่ยง 2568", date: "10 มี.ค. 2568", objective: "เสริมสร้างความประพฤติชอบ ป้องกันทุจริต และยึดหลักธรรมาภิบาล" }
                 ]
             }
         };
@@ -1705,7 +2120,7 @@
 
             // --- TAB 6: ยุทธศาสตร์ & ธรรมาภิบาล ---
             else if (tabId === 'tab6') {
-                const data = staticData.tab6;
+                const data = strategyData;
                 container.innerHTML = `
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
                         <h3 class="font-bold text-slate-800 text-sm">👑 การติดตามแผนยุทธศาสตร์ ฉบับที่ 6 (พ.ศ. 2567 - 2569) ปรับปรุง 2568</h3>
@@ -1716,89 +2131,729 @@
                                     <h4 class="font-bold text-slate-800 text-xs">${s.title}</h4>
                                     <p class="text-[11px] text-slate-500 mt-1">${s.desc}</p>
                                 </div>
-                            `).join('')}
+                            `).join('') || '<p class="text-xs text-slate-400 col-span-3">ยังไม่มีข้อมูลยุทธศาสตร์ (จัดการได้จากมุมมองเจ้าหน้าที่)</p>'}
                         </div>
                     </div>
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <h3 class="font-bold text-slate-800 text-sm mb-3">📜 ระเบียบและโครงการสำคัญที่เปิดตัวในปี 2568</h3>
                         <table class="w-full text-left text-xs">
                             <thead><tr class="bg-slate-100 text-slate-700"><th class="p-2">หมวดงาน</th><th class="p-2">ชื่อระเบียบ / ประกาศโครงการ</th><th class="p-2">วันลงนาม</th><th class="p-2">วัตถุประสงค์เพื่อสมาชิก</th></tr></thead>
-                            <tbody class="divide-y divide-slate-100">${data.regulations.map(r => `<tr><td class="p-2 font-bold text-blue-900">${r.category}</td><td class="p-2">${r.title}</td><td class="p-2 text-slate-500">${r.date}</td><td class="p-2 text-slate-600">${r.objective}</td></tr>`).join('')}</tbody>
+                            <tbody class="divide-y divide-slate-100">${data.regulations.map(r => `<tr><td class="p-2 font-bold text-blue-900">${r.category}</td><td class="p-2">${r.title}</td><td class="p-2 text-slate-500">${r.date}</td><td class="p-2 text-slate-600">${r.objective}</td></tr>`).join('') || '<tr><td colspan="4" class="p-3 text-center text-slate-400">ยังไม่มีระเบียบ/ประกาศ</td></tr>'}</tbody>
                         </table>
                     </div>`;
             }
         }
     
 
+        // ==================================================================
+        // ==============  NEWS / NOTIFY / COMPLAINT / VOTE  ===============
+        // ==================================================================
+        function uid(prefix) { return prefix + '-' + Math.random().toString(36).slice(2, 8); }
+        function todayStr() { return new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }); }
+
+        // ---- Mock Data Stores ----
+        let newsData = [
+            { id: uid('news'), category: 'ประกาศ', title: 'ประกาศจ่ายเงินปันผลและเฉลี่ยคืน ประจำปี 2568', body: 'สหกรณ์ฯ กำหนดจ่ายเงินปันผลหุ้นและเงินเฉลี่ยคืน ประจำปีบัญชี 2568 ให้แก่สมาชิกทุกท่าน ตั้งแต่วันที่ 25 มีนาคม 2569 เป็นต้นไป สมาชิกสามารถตรวจสอบยอดได้ที่เมนู "ภาพรวมทางการเงิน"', date: '2 มี.ค. 2569' },
+            { id: uid('news'), category: 'กิจกรรม', title: 'เชิญร่วมประชุมใหญ่สามัญประจำปี 2568', body: 'ขอเชิญสมาชิกทุกท่านเข้าร่วมประชุมใหญ่สามัญประจำปี ในวันที่ 30 มีนาคม 2569 เวลา 09.00 น. ณ หอประชุมสหกรณ์ เพื่อรับทราบผลการดำเนินงานและลงมติวาระสำคัญ', date: '25 ก.พ. 2569' },
+            { id: uid('news'), category: 'สวัสดิการ', title: 'เปิดรับสมัครสวัสดิการทุนการศึกษาบุตรสมาชิก', body: 'สหกรณ์เปิดรับสมัครขอรับทุนการศึกษาบุตรสมาชิกประจำปี 2569 ตั้งแต่บัดนี้ถึงวันที่ 15 เมษายน 2569 สอบถามรายละเอียดที่เจ้าหน้าที่สวัสดิการ', date: '18 ก.พ. 2569' },
+            { id: uid('news'), category: 'ประกาศ', title: 'ปรับปรุงระบบสารสนเทศ งดให้บริการชั่วคราว', body: 'สหกรณ์จะปรับปรุงระบบสารสนเทศในวันที่ 10 มี.ค. 2569 เวลา 22.00-24.00 น. ระบบสมาชิกออนไลน์อาจไม่สามารถใช้งานได้ชั่วคราวในช่วงเวลาดังกล่าว', date: '10 ก.พ. 2569' }
+        ];
+
+        let notificationsData = [
+            { id: uid('ntf'), title: 'แจ้งเตือนงวดชำระเงินกู้', body: 'ท่านมีกำหนดชำระค่างวดเงินกู้สามัญ จำนวน 4,500 บาท ภายในวันที่ 5 ของเดือนถัดไป', date: todayStr(), type: 'system', read: false },
+            { id: uid('ntf'), title: 'อนุมัติเงินกู้ฉุกเฉินเรียบร้อย', body: 'คำขอกู้เงินฉุกเฉินของท่านได้รับการอนุมัติแล้ว เงินจะโอนเข้าบัญชีเงินฝากภายใน 1 วันทำการ', date: '4 มี.ค. 2569', type: 'staff', read: false },
+            { id: uid('ntf'), title: 'ยินดีต้อนรับสู่ระบบสมาชิกออนไลน์', body: 'ท่านสามารถตรวจสอบข้อมูลหุ้น เงินฝาก เงินกู้ ส่งเรื่องร้องเรียน และร่วมโหวตได้จากเมนูด้านบน', date: '1 มี.ค. 2569', type: 'system', read: true }
+        ];
+
+        let complaintsData = [
+            { id: uid('cp'), memberId: '2536', memberName: 'นางสาวปัทมา พุฒวันเพ็ญ', category: 'ระบบเงินฝาก / เงินกู้', subject: 'ยอดเงินฝากในแอปไม่ตรงกับสมุดบัญชี', detail: 'ยอดเงินฝากออมทรัพย์ในระบบแสดง 89,458.40 บาท แต่ในสมุดคู่ฝากแสดง 89,958.40 บาท รบกวนตรวจสอบให้ด้วยค่ะ', status: 'received', date: '3 มี.ค. 2569', reason: '' }
+        ];
+
+        let votesData = [
+            {
+                id: uid('vt'), title: 'เลือกตั้งกรรมการดำเนินการ ชุดที่ 37', desc: 'โปรดเลือกกรรมการดำเนินการที่ท่านต้องการเสนอชื่อ จำนวน 1 ท่าน', deadline: '2569-03-28', status: 'open', resultsVisible: false,
+                options: [{ id: 'o1', label: 'นายสมชาย ใจดี', count: 42 }, { id: 'o2', label: 'นางสาวสมหญิง รักงาน', count: 37 }, { id: 'o3', label: 'นายวิชัย ตั้งมั่น', count: 21 }],
+                userVoted: null
+            },
+            {
+                id: uid('vt'), title: 'รับรองงบการเงินประจำปี 2568', desc: 'ขอมติที่ประชุมรับรองงบการเงินและรายงานผลการดำเนินงานประจำปีบัญชี 2568', deadline: '2569-03-28', status: 'open', resultsVisible: true,
+                options: [{ id: 'o1', label: 'เห็นชอบ', count: 118 }, { id: 'o2', label: 'ไม่เห็นชอบ', count: 4 }, { id: 'o3', label: 'งดออกเสียง', count: 6 }],
+                userVoted: null
+            }
+        ];
+
+        // Mock member directory used by staff / sysadmin search
+        let membersData = [
+            { id: '2536', name: 'นางสาวปัทมา พุฒวันเพ็ญ', roles: ['member'], active: true, shares: 207000, deposit: 89458.40, loan: 311400 },
+            { id: '1042', name: 'นายประสิทธิ์ แสนดี', roles: ['member'], active: true, shares: 156000, deposit: 45210.00, loan: 0 },
+            { id: '0871', name: 'นางสมศรี บุญมาก', roles: ['member', 'staff'], active: true, shares: 98000, deposit: 132400.50, loan: 52000 },
+            { id: '0350', name: 'นายวิชัย ตั้งมั่น', roles: ['member', 'admin'], active: true, shares: 320000, deposit: 210500.00, loan: 0 },
+            { id: '0099', name: 'นายกิตติ ระบบดี', roles: ['staff', 'sysadmin'], active: true, shares: 40000, deposit: 15000.00, loan: 0 },
+            { id: '3310', name: 'นางสาวรุ่งนภา ขยันงาน', roles: ['member'], active: false, shares: 62000, deposit: 8900.00, loan: 120000 }
+        ];
+
+        const ROLE_LABEL = { member: 'สมาชิก', staff: 'เจ้าหน้าที่', admin: 'ผู้บริหาร', sysadmin: 'ผู้ดูแลระบบ' };
+        const ROLE_BADGE_CLASS = { member: 'bg-amber-100 text-amber-700', staff: 'bg-emerald-100 text-emerald-700', admin: 'bg-indigo-100 text-indigo-700', sysadmin: 'bg-purple-100 text-purple-700' };
+
+        // Strategy & Governance data (shown read-only on the ผู้บริหาร "ยุทธศาสตร์" tab, managed by เจ้าหน้าที่)
+        let strategyData = {
+            strategies: [
+                { id: uid('str'), title: "ยุทธศาสตร์ที่ 1: ยกระดับเสถียรภาพทางการเงิน", desc: "เพิ่มสัดส่วนทุนเรือนหุ้น บริหาร NPL ให้ต่ำกว่า 0.5% และบริหาร Asset-Liability Mismatch อย่างมีประสิทธิภาพ" },
+                { id: uid('str'), title: "ยุทธศาสตร์ที่ 2: พัฒนาเทคโนโลยีดิจิทัล (Mobile App)", desc: "มุ่งสู่ Digital Coop อำนวยความสะดวกในการธุรกรรม ยื่นกู้ ถอนเงินฝาก ผ่านแอปพลิเคชันอย่างปลอดภัย" },
+                { id: uid('str'), title: "ยุทธศาสตร์ที่ 3: สวัสดิการแบบพุ่งเป้าและยั่งยืน", desc: "ปรับปรุงกองทุนสวัสดิการเพื่อรองรับสังคมสูงวัยของสมาชิกบำนาญ พร้อมคุ้มครองภาระหนี้สิน" }
+            ],
+            regulations: [
+                { id: uid('reg'), category: "การเงิน & สินเชื่อ", title: "ระเบียบว่าด้วยการให้กู้ยืมเพื่อการเคหะ (ฉบับปรับปรุง 2568)", date: "15 ม.ค. 2568", objective: "ปรับลดดอกเบี้ยกู้บ้านเพื่อลดภาระค่าครองชีพสมาชิก" },
+                { id: uid('reg'), category: "สวัสดิการ", title: "ประกาศโครงการสวัสดิการเกษียณมีสุข 2568", date: "01 ก.พ. 2568", objective: "เพิ่มสิทธิประโยชน์การออมอัตราดอกเบี้ยพิเศษสำหรับผู้เกษียณ" },
+                { id: uid('reg'), category: "ธรรมาภิบาล", title: "หลักเกณฑ์การควบคุมภายในและบริหารความเสี่ยง 2568", date: "10 มี.ค. 2568", objective: "เสริมสร้างความประพฤติชอบ ป้องกันทุจริต และยึดหลักธรรมาภิบาล" }
+            ]
+        };
+
+        function renderMemberFeatures() {
+            renderMemberNews(); renderMemberNotifications(); renderMemberComplaints(); renderMemberVotes(); updateNotifBadges();
+        }
+
+        // ---- News (Member) ----
+        function renderMemberNews() {
+            const wrap = document.getElementById('newsListMember');
+            if (!wrap) return;
+            wrap.innerHTML = newsData.map(n => `
+                <div onclick="openNewsDetail('${n.id}')" class="border border-slate-200 rounded-xl p-4 hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer bg-slate-50/40">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">${n.category}</span>
+                        <span class="text-[10px] text-slate-400">${n.date}</span>
+                    </div>
+                    <h3 class="font-bold text-sm text-slate-800 leading-snug">${n.title}</h3>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">${n.body}</p>
+                </div>`).join('') || '<p class="text-xs text-slate-400">ยังไม่มีข่าวสาร</p>';
+        }
+        function openNewsDetail(id) {
+            const n = newsData.find(x => x.id === id); if (!n) return;
+            document.getElementById('newsDetailBody').innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">${n.category}</span>
+                    <span class="text-[10px] text-slate-400">${n.date}</span>
+                </div>
+                <h3 class="font-bold text-base text-slate-800 mb-2">${n.title}</h3>
+                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">${n.body}</p>`;
+            openModal('modalNewsDetail');
+        }
+
+        // ---- Notifications (Member) ----
+        function updateNotifBadges() {
+            const unread = notificationsData.filter(n => !n.read).length;
+            const bellBadge = document.getElementById('notifBellBadge');
+            const tabBadge = document.getElementById('notifTabBadge');
+            [bellBadge, tabBadge].forEach(b => {
+                if (!b) return;
+                if (unread > 0) { b.innerText = unread; b.classList.remove('hidden'); b.classList.add('flex'); }
+                else { b.classList.add('hidden'); b.classList.remove('flex'); }
+            });
+        }
+        function renderMemberNotifications() {
+            const wrap = document.getElementById('notifListMember');
+            if (!wrap) return;
+            wrap.innerHTML = notificationsData.map(n => `
+                <div onclick="openNotifDetail('${n.id}')" class="border ${n.read ? 'border-slate-200 bg-white' : 'border-amber-300 bg-amber-50/60'} rounded-xl p-3.5 flex items-start gap-3 cursor-pointer hover:shadow-sm transition">
+                    <span class="mt-0.5 shrink-0 w-2 h-2 rounded-full ${n.read ? 'bg-slate-300' : 'bg-amber-500'}"></span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-sm font-bold text-slate-800 truncate">${n.title}</p>
+                            <span class="text-[10px] text-slate-400 shrink-0">${n.date}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">${n.body}</p>
+                        <span class="text-[10px] font-semibold ${n.type === 'staff' ? 'text-emerald-600' : 'text-blue-600'} mt-1 inline-block">${n.type === 'staff' ? '👤 จากเจ้าหน้าที่' : '⚙️ ข้อความจากระบบ'}</span>
+                    </div>
+                </div>`).join('') || '<p class="text-xs text-slate-400">ยังไม่มีการแจ้งเตือน</p>';
+        }
+        function openNotifDetail(id) {
+            const n = notificationsData.find(x => x.id === id); if (!n) return;
+            n.read = true;
+            showToast(n.title, 'info');
+            renderMemberNotifications(); updateNotifBadges();
+        }
+        function markAllNotifsRead(silent) {
+            notificationsData.forEach(n => n.read = true);
+            renderMemberNotifications(); updateNotifBadges();
+            if (!silent) showToast('ทำเครื่องหมายอ่านแล้วทั้งหมด');
+        }
+
+        // ---- Complaints (Member) ----
+        const COMPLAINT_STATUS_META = {
+            pending:   { label: 'รอรับเรื่อง',        class: 'bg-slate-100 text-slate-600' },
+            received:  { label: 'เจ้าหน้าที่รับเรื่องแล้ว', class: 'bg-blue-100 text-blue-700' },
+            done:      { label: 'สำเร็จ',             class: 'bg-emerald-100 text-emerald-700' },
+            cancelled: { label: 'ยกเลิก',              class: 'bg-rose-100 text-rose-700' }
+        };
+        function openNewComplaintModal() {
+            document.getElementById('complaintSubject').value = '';
+            document.getElementById('complaintDetail').value = '';
+            openModal('modalNewComplaint');
+        }
+        function submitComplaint(e) {
+            e.preventDefault();
+            complaintsData.unshift({
+                id: uid('cp'), memberId: '2536', memberName: 'นางสาวปัทมา พุฒวันเพ็ญ',
+                category: document.getElementById('complaintCategory').value,
+                subject: document.getElementById('complaintSubject').value,
+                detail: document.getElementById('complaintDetail').value,
+                status: 'pending', date: todayStr(), reason: ''
+            });
+            closeModal('modalNewComplaint');
+            renderMemberComplaints();
+            showToast('ส่งเรื่องร้องเรียนเรียบร้อยแล้ว เจ้าหน้าที่จะดำเนินการโดยเร็วที่สุด');
+        }
+        function renderMemberComplaints() {
+            const wrap = document.getElementById('complaintListMember');
+            if (!wrap) return;
+            const mine = complaintsData.filter(c => c.memberId === '2536');
+            wrap.innerHTML = mine.map(c => {
+                const meta = COMPLAINT_STATUS_META[c.status];
+                return `
+                <div onclick="openComplaintDetail('${c.id}')" class="border border-slate-200 rounded-xl p-4 hover:shadow-sm transition cursor-pointer">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="text-[10px] text-slate-400">${c.category} • ${c.date}</p>
+                            <h4 class="font-bold text-sm text-slate-800 mt-0.5">${c.subject}</h4>
+                        </div>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${meta.class}">${meta.label}</span>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">ยังไม่มีเรื่องร้องเรียน</p>';
+        }
+        function complaintStepper(status) {
+            const steps = ['pending', 'received', status === 'cancelled' ? 'cancelled' : 'done'];
+            const labels = { pending: 'รอรับเรื่อง', received: 'เจ้าหน้าที่รับเรื่อง', done: 'สำเร็จ', cancelled: 'ยกเลิก' };
+            const activeIdx = steps.indexOf(status) === -1 ? 0 : steps.indexOf(status);
+            return `<div class="flex items-center">${steps.map((s, i) => `
+                <div class="flex items-center ${i < steps.length - 1 ? 'flex-1' : ''}">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i <= activeIdx ? (s === 'cancelled' ? 'bg-rose-500 text-white' : 'bg-blue-800 text-white') : 'bg-slate-200 text-slate-500'}">${i + 1}</div>
+                    ${i < steps.length - 1 ? `<div class="flex-1 h-1 mx-1 rounded ${i < activeIdx ? 'bg-blue-800' : 'bg-slate-200'}"></div>` : ''}
+                </div>`).join('')}</div>
+                <div class="flex text-[9px] text-slate-500 font-semibold mt-1 justify-between">${steps.map(s => `<span>${labels[s]}</span>`).join('')}</div>`;
+        }
+        function openComplaintDetail(id) {
+            const c = complaintsData.find(x => x.id === id); if (!c) return;
+            const meta = COMPLAINT_STATUS_META[c.status];
+            const canCancel = c.status === 'pending' || c.status === 'received';
+            document.getElementById('complaintDetailBody').innerHTML = `
+                <div>${complaintStepper(c.status)}</div>
+                <div class="border-t border-slate-100 pt-3 space-y-1.5">
+                    <p class="text-[11px] text-slate-400">${c.category} • ${c.date}</p>
+                    <h4 class="font-bold text-sm text-slate-800">${c.subject}</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">${c.detail}</p>
+                    <span class="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full ${meta.class} mt-1">${meta.label}</span>
+                    ${c.reason ? `<div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 mt-2"><p class="text-[10px] font-bold text-slate-500">เหตุผล/หมายเหตุจากเจ้าหน้าที่:</p><p class="text-xs text-slate-700 mt-0.5">${c.reason}</p></div>` : ''}
+                </div>
+                ${canCancel ? `<button onclick="cancelComplaintPrompt('${c.id}')" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2.5 rounded-xl transition border border-rose-200">ยกเลิกเรื่องร้องเรียนนี้</button>` : ''}
+            `;
+            openModal('modalComplaintDetail');
+        }
+        function cancelComplaintPrompt(id) {
+            openReasonModal('ระบุเหตุผลที่ยกเลิกเรื่องร้องเรียน', (reason) => {
+                const c = complaintsData.find(x => x.id === id); if (!c) return;
+                c.status = 'cancelled'; c.reason = reason || 'สมาชิกยกเลิกเรื่องร้องเรียนด้วยตนเอง';
+                closeModal('modalComplaintDetail');
+                renderMemberComplaints();
+                showToast('ยกเลิกเรื่องร้องเรียนเรียบร้อยแล้ว', 'info');
+            });
+        }
+
+        // ---- Generic Reason Modal ----
+        let reasonModalCallback = null;
+        function openReasonModal(title, onConfirm) {
+            document.getElementById('modalReasonTitle').innerText = title;
+            document.getElementById('modalReasonInput').value = '';
+            reasonModalCallback = onConfirm;
+            openModal('modalReason');
+        }
+        function confirmReasonModal() {
+            const val = document.getElementById('modalReasonInput').value.trim();
+            closeModal('modalReason');
+            if (reasonModalCallback) reasonModalCallback(val);
+            reasonModalCallback = null;
+        }
+
+        // ---- Voting (Member) ----
+        function renderMemberVotes() {
+            const wrap = document.getElementById('voteListMember');
+            if (!wrap) return;
+            wrap.innerHTML = votesData.map(v => {
+                const total = v.options.reduce((s, o) => s + o.count, 0) || 1;
+                const showResults = v.userVoted || v.status === 'closed' || v.resultsVisible;
+                const optionsHtml = v.status === 'open' && !v.userVoted
+                    ? v.options.map(o => `
+                        <label class="flex items-center gap-2.5 border border-slate-200 rounded-lg p-2.5 hover:bg-slate-50 cursor-pointer">
+                            <input type="radio" name="vote-${v.id}" value="${o.id}" class="accent-emerald-600 w-4 h-4">
+                            <span class="text-xs font-medium text-slate-700">${o.label}</span>
+                        </label>`).join('')
+                    : v.options.map(o => {
+                        const pct = Math.round((o.count / total) * 100);
+                        return `<div>
+                            <div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-700">${o.label}${v.userVoted === o.id ? ' <span class=\'text-emerald-600 font-bold\'>(ที่ท่านเลือก)</span>' : ''}</span><span class="font-bold text-slate-800">${showResults ? pct + '%' : '—'}</span></div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-2 bg-emerald-600 rounded-full" style="width:${showResults ? pct : 0}%"></div></div>
+                        </div>`;
+                    }).join('');
+                return `
+                <div class="border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                        <h4 class="font-bold text-sm text-slate-800">${v.title}</h4>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${v.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${v.status === 'open' ? 'เปิดโหวต' : 'ปิดโหวตแล้ว'}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">${v.desc} • ปิดรับ ${v.deadline}</p>
+                    <div class="space-y-2">${optionsHtml}</div>
+                    ${v.status === 'open' && !v.userVoted ? `<button onclick="castVote('${v.id}')" class="mt-3 w-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 rounded-xl transition">ยืนยันการโหวต</button>` : (v.userVoted ? `<p class="text-[11px] text-emerald-700 font-semibold mt-3">✓ ท่านได้ใช้สิทธิ์โหวตแล้ว ขอบคุณค่ะ</p>` : '')}
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">ยังไม่มีวาระโหวตในขณะนี้</p>';
+        }
+        function castVote(voteId) {
+            const v = votesData.find(x => x.id === voteId); if (!v) return;
+            const checked = document.querySelector(`input[name="vote-${voteId}"]:checked`);
+            if (!checked) { showToast('กรุณาเลือกตัวเลือกก่อนยืนยัน', 'error'); return; }
+            const opt = v.options.find(o => o.id === checked.value);
+            opt.count++; v.userVoted = checked.value;
+            renderMemberVotes();
+            showToast('บันทึกการโหวตของท่านเรียบร้อยแล้ว');
+        }
+
+        // ---- PDF Download (mock) ----
+        function downloadMemberPDF() {
+            showToast('กำลังสร้างไฟล์ PDF ข้อมูลส่วนบุคคลของท่าน กรุณารอสักครู่...', 'info');
+            setTimeout(() => showToast('ดาวน์โหลดไฟล์ PDF ข้อมูลของท่านสำเร็จแล้ว'), 1400);
+        }
+        function downloadCoopPDF() {
+            showToast('กำลังสร้างรายงานสรุปข้อมูลสหกรณ์ (PDF) กรุณารอสักครู่...', 'info');
+            setTimeout(() => showToast('ดาวน์โหลดรายงานสหกรณ์ (PDF) สำเร็จแล้ว'), 1400);
+        }
+
+        // ==================================================================
+        // ===========================  STAFF  =============================
+        // ==================================================================
+        function switchStaffTab(tabId) {
+            document.querySelectorAll('.staff-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('#view-staff .tab-btn').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById('staff-pane-' + tabId).classList.remove('hidden');
+            document.getElementById('stbtn-' + tabId).classList.add('tab-active');
+            if (tabId === 'news') renderStaffNews();
+            if (tabId === 'complaint') renderStaffComplaints();
+            if (tabId === 'vote') renderStaffVotes();
+            if (tabId === 'search') renderStaffMemberSearch();
+            if (tabId === 'strategy') renderStaffStrategy();
+        }
+
+        // ---- Staff: News CRUD ----
+        function renderStaffNews() {
+            const wrap = document.getElementById('staffNewsList');
+            if (!wrap) return;
+            wrap.innerHTML = newsData.map(n => `
+                <div class="border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">${n.category}</span>
+                        <span class="text-[10px] text-slate-400">${n.date}</span>
+                    </div>
+                    <h3 class="font-bold text-sm text-slate-800">${n.title}</h3>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">${n.body}</p>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="openNewsForm('${n.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold py-1.5 rounded-lg transition">แก้ไข</button>
+                        <button onclick="deleteNews('${n.id}')" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold py-1.5 rounded-lg transition">ลบ</button>
+                    </div>
+                </div>`).join('') || '<p class="text-xs text-slate-400">ยังไม่มีข่าวสาร</p>';
+        }
+        function openNewsForm(id) {
+            const isEdit = !!id;
+            document.getElementById('newsFormTitle').innerText = isEdit ? 'แก้ไขข่าว' : 'เพิ่มข่าวใหม่';
+            document.getElementById('newsFormId').value = id || '';
+            if (isEdit) {
+                const n = newsData.find(x => x.id === id);
+                document.getElementById('newsFormCategory').value = n.category;
+                document.getElementById('newsFormTitleInput').value = n.title;
+                document.getElementById('newsFormBody').value = n.body;
+            } else {
+                document.getElementById('newsFormCategory').selectedIndex = 0;
+                document.getElementById('newsFormTitleInput').value = '';
+                document.getElementById('newsFormBody').value = '';
+            }
+            openModal('modalNewsForm');
+        }
+        function saveNews(e) {
+            e.preventDefault();
+            const id = document.getElementById('newsFormId').value;
+            const category = document.getElementById('newsFormCategory').value;
+            const title = document.getElementById('newsFormTitleInput').value;
+            const body = document.getElementById('newsFormBody').value;
+            if (id) {
+                const n = newsData.find(x => x.id === id);
+                n.category = category; n.title = title; n.body = body;
+                showToast('แก้ไขข่าวสารเรียบร้อยแล้ว');
+            } else {
+                newsData.unshift({ id: uid('news'), category, title, body, date: todayStr() });
+                showToast('เพิ่มข่าวสารใหม่เรียบร้อยแล้ว');
+            }
+            closeModal('modalNewsForm');
+            renderStaffNews();
+        }
+        function deleteNews(id) {
+            openReasonModal('ยืนยันการลบข่าวนี้? (ไม่บังคับกรอกเหตุผล)', () => {
+                newsData = newsData.filter(x => x.id !== id);
+                renderStaffNews();
+                showToast('ลบข่าวสารเรียบร้อยแล้ว', 'info');
+            });
+        }
+
+        // ---- Staff: Strategy & Governance management (feeds Executive "ยุทธศาสตร์" tab) ----
+        function renderStaffStrategy() {
+            const listWrap = document.getElementById('staffStrategyList');
+            if (listWrap) {
+                listWrap.innerHTML = strategyData.strategies.map((s, idx) => `
+                    <div class="border border-slate-200 rounded-xl p-3.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#003c71] text-white flex items-center justify-center font-bold text-[11px] shrink-0">${idx + 1}</span>
+                        </div>
+                        <h4 class="font-bold text-xs text-slate-800 mt-2">${s.title}</h4>
+                        <p class="text-[11px] text-slate-500 mt-1">${s.desc}</p>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="openStrategyForm('${s.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold py-1.5 rounded-lg transition">แก้ไข</button>
+                            <button onclick="deleteStrategy('${s.id}')" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold py-1.5 rounded-lg transition">ลบ</button>
+                        </div>
+                    </div>`).join('') || '<p class="text-xs text-slate-400 col-span-2">ยังไม่มีข้อมูลยุทธศาสตร์</p>';
+            }
+            const tbody = document.getElementById('staffRegulationTable');
+            if (tbody) {
+                tbody.innerHTML = strategyData.regulations.map(r => `
+                    <tr>
+                        <td class="p-2.5 font-bold text-blue-900">${r.category}</td>
+                        <td class="p-2.5">${r.title}</td>
+                        <td class="p-2.5 text-slate-500">${r.date}</td>
+                        <td class="p-2.5 text-slate-600">${r.objective}</td>
+                        <td class="p-2.5 text-right whitespace-nowrap">
+                            <button onclick="openRegulationForm('${r.id}')" class="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg transition">แก้ไข</button>
+                            <button onclick="deleteRegulation('${r.id}')" class="text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 rounded-lg transition ml-1">ลบ</button>
+                        </td>
+                    </tr>`).join('') || '<tr><td colspan="5" class="p-3 text-center text-slate-400 text-xs">ยังไม่มีระเบียบ/ประกาศ</td></tr>';
+            }
+        }
+        function openStrategyForm(id) {
+            const isEdit = !!id;
+            document.getElementById('strategyFormTitle').innerText = isEdit ? 'แก้ไขยุทธศาสตร์' : 'เพิ่มยุทธศาสตร์';
+            document.getElementById('strategyFormId').value = id || '';
+            if (isEdit) {
+                const s = strategyData.strategies.find(x => x.id === id);
+                document.getElementById('strategyFormTitleInput').value = s.title;
+                document.getElementById('strategyFormDesc').value = s.desc;
+            } else {
+                document.getElementById('strategyFormTitleInput').value = '';
+                document.getElementById('strategyFormDesc').value = '';
+            }
+            openModal('modalStrategyForm');
+        }
+        function saveStrategy(e) {
+            e.preventDefault();
+            const id = document.getElementById('strategyFormId').value;
+            const title = document.getElementById('strategyFormTitleInput').value;
+            const desc = document.getElementById('strategyFormDesc').value;
+            if (id) {
+                const s = strategyData.strategies.find(x => x.id === id);
+                s.title = title; s.desc = desc;
+                showToast('แก้ไขยุทธศาสตร์เรียบร้อยแล้ว');
+            } else {
+                strategyData.strategies.push({ id: uid('str'), title, desc });
+                showToast('เพิ่มยุทธศาสตร์ใหม่เรียบร้อยแล้ว');
+            }
+            closeModal('modalStrategyForm');
+            renderStaffStrategy();
+        }
+        function deleteStrategy(id) {
+            openReasonModal('ยืนยันการลบยุทธศาสตร์นี้? (ไม่บังคับกรอกเหตุผล)', () => {
+                strategyData.strategies = strategyData.strategies.filter(x => x.id !== id);
+                renderStaffStrategy();
+                showToast('ลบยุทธศาสตร์เรียบร้อยแล้ว', 'info');
+            });
+        }
+        function openRegulationForm(id) {
+            const isEdit = !!id;
+            document.getElementById('regulationFormTitle').innerText = isEdit ? 'แก้ไขระเบียบ/ประกาศ' : 'เพิ่มระเบียบ/ประกาศ';
+            document.getElementById('regulationFormId').value = id || '';
+            if (isEdit) {
+                const r = strategyData.regulations.find(x => x.id === id);
+                document.getElementById('regulationFormCategory').value = r.category;
+                document.getElementById('regulationFormTitleInput').value = r.title;
+                document.getElementById('regulationFormObjective').value = r.objective;
+                document.getElementById('regulationFormDate').value = '';
+            } else {
+                document.getElementById('regulationFormCategory').selectedIndex = 0;
+                document.getElementById('regulationFormTitleInput').value = '';
+                document.getElementById('regulationFormObjective').value = '';
+                document.getElementById('regulationFormDate').value = '';
+            }
+            openModal('modalRegulationForm');
+        }
+        function saveRegulation(e) {
+            e.preventDefault();
+            const id = document.getElementById('regulationFormId').value;
+            const category = document.getElementById('regulationFormCategory').value;
+            const title = document.getElementById('regulationFormTitleInput').value;
+            const objective = document.getElementById('regulationFormObjective').value;
+            const dateInput = document.getElementById('regulationFormDate').value;
+            const dateDisplay = dateInput ? new Date(dateInput).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : todayStr();
+            if (id) {
+                const r = strategyData.regulations.find(x => x.id === id);
+                r.category = category; r.title = title; r.objective = objective;
+                if (dateInput) r.date = dateDisplay;
+                showToast('แก้ไขระเบียบ/ประกาศเรียบร้อยแล้ว');
+            } else {
+                strategyData.regulations.unshift({ id: uid('reg'), category, title, date: dateDisplay, objective });
+                showToast('เพิ่มระเบียบ/ประกาศใหม่เรียบร้อยแล้ว');
+            }
+            closeModal('modalRegulationForm');
+            renderStaffStrategy();
+        }
+        function deleteRegulation(id) {
+            openReasonModal('ยืนยันการลบระเบียบ/ประกาศนี้? (ไม่บังคับกรอกเหตุผล)', () => {
+                strategyData.regulations = strategyData.regulations.filter(x => x.id !== id);
+                renderStaffStrategy();
+                showToast('ลบระเบียบ/ประกาศเรียบร้อยแล้ว', 'info');
+            });
+        }
+
+        // ---- Staff: Complaint management ----
+        let staffComplaintFilter = 'all';
+        function updateStaffPendingCount() {
+            const n = complaintsData.filter(c => c.status === 'pending').length;
+            const el = document.getElementById('staffPendingCount');
+            if (el) el.innerText = n + ' รายการ';
+        }
+        function filterStaffComplaints(status, evt) {
+            staffComplaintFilter = status;
+            document.querySelectorAll('.cfilter-btn').forEach(b => { b.classList.remove('cfilter-active', 'bg-slate-800', 'text-white'); b.classList.add('bg-slate-100', 'text-slate-600'); });
+            const btn = (evt && evt.target) || window.event?.target;
+            if (btn) { btn.classList.add('cfilter-active', 'bg-slate-800', 'text-white'); btn.classList.remove('bg-slate-100', 'text-slate-600'); }
+            renderStaffComplaints();
+        }
+        function renderStaffComplaints() {
+            const wrap = document.getElementById('staffComplaintList');
+            if (!wrap) return;
+            const list = complaintsData.filter(c => staffComplaintFilter === 'all' || c.status === staffComplaintFilter);
+            wrap.innerHTML = list.map(c => {
+                const meta = COMPLAINT_STATUS_META[c.status];
+                return `
+                <div class="border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="text-[10px] text-slate-400">${c.category} • ${c.date} • รหัสสมาชิก ${c.memberId} (${c.memberName})</p>
+                            <h4 class="font-bold text-sm text-slate-800 mt-0.5">${c.subject}</h4>
+                            <p class="text-xs text-slate-600 mt-1">${c.detail}</p>
+                            ${c.reason ? `<p class="text-[11px] text-slate-500 mt-1">หมายเหตุ: ${c.reason}</p>` : ''}
+                        </div>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${meta.class}">${meta.label}</span>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        ${c.status === 'pending' ? `<button onclick="staffUpdateComplaint('${c.id}','received')" class="flex-1 bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold py-1.5 rounded-lg transition">รับเรื่อง</button>` : ''}
+                        ${(c.status === 'pending' || c.status === 'received') ? `<button onclick="staffUpdateComplaint('${c.id}','done')" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold py-1.5 rounded-lg transition">ทำเครื่องหมายสำเร็จ</button>
+                        <button onclick="staffUpdateComplaint('${c.id}','cancelled')" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold py-1.5 rounded-lg transition">ยกเลิก</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">ไม่มีเรื่องร้องเรียนในหมวดนี้</p>';
+            updateStaffPendingCount();
+        }
+        function staffUpdateComplaint(id, newStatus) {
+            const needsReason = newStatus === 'done' || newStatus === 'cancelled';
+            const apply = (reason) => {
+                const c = complaintsData.find(x => x.id === id); if (!c) return;
+                c.status = newStatus; if (reason) c.reason = reason;
+                renderStaffComplaints();
+                showToast('อัปเดตสถานะเรื่องร้องเรียนเรียบร้อยแล้ว');
+            };
+            if (needsReason) {
+                openReasonModal(newStatus === 'done' ? 'ระบุรายละเอียดผลการดำเนินการ (สำเร็จ)' : 'ระบุเหตุผลที่ยกเลิกเรื่องร้องเรียน', apply);
+            } else { apply(''); }
+        }
+
+        // ---- Staff: Vote management ----
+        function renderStaffVotes() {
+            const wrap = document.getElementById('staffVoteList');
+            if (!wrap) return;
+            wrap.innerHTML = votesData.map(v => {
+                const total = v.options.reduce((s, o) => s + o.count, 0) || 1;
+                return `
+                <div class="border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                        <h4 class="font-bold text-sm text-slate-800">${v.title}</h4>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${v.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${v.status === 'open' ? 'เปิดโหวต' : 'ปิดโหวตแล้ว'}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">${v.desc} • ปิดรับ ${v.deadline} • รวม ${total} เสียง</p>
+                    <div class="space-y-2">${v.options.map(o => {
+                        const pct = Math.round((o.count / total) * 100);
+                        return `<div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-700">${o.label}</span><span class="font-bold text-slate-800">${o.count} เสียง (${pct}%)</span></div><div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-2 bg-indigo-600 rounded-full" style="width:${pct}%"></div></div></div>`;
+                    }).join('')}</div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="toggleVoteResults('${v.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold py-1.5 rounded-lg transition">${v.resultsVisible ? 'ซ่อนผลโหวตจากสมาชิก' : 'เผยแพร่ผลโหวตให้สมาชิกเห็น'}</button>
+                        ${v.status === 'open' ? `<button onclick="closeVoteNow('${v.id}')" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold py-1.5 rounded-lg transition">ปิดรับโหวต</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">ยังไม่มีวาระโหวต</p>';
+        }
+        function toggleVoteResults(id) {
+            const v = votesData.find(x => x.id === id); if (!v) return;
+            v.resultsVisible = !v.resultsVisible;
+            renderStaffVotes();
+            showToast(v.resultsVisible ? 'เผยแพร่ผลโหวตให้สมาชิกเห็นแล้ว' : 'ซ่อนผลโหวตจากสมาชิกแล้ว', 'info');
+        }
+        function closeVoteNow(id) {
+            const v = votesData.find(x => x.id === id); if (!v) return;
+            v.status = 'closed'; v.resultsVisible = true;
+            renderStaffVotes();
+            showToast('ปิดรับโหวตเรียบร้อยแล้ว');
+        }
+        function openVoteForm() {
+            document.getElementById('voteFormTitle').value = '';
+            document.getElementById('voteFormDesc').value = '';
+            document.getElementById('voteFormOptions').value = '';
+            document.getElementById('voteFormDeadline').value = '';
+            openModal('modalVoteForm');
+        }
+        function saveVote(e) {
+            e.preventDefault();
+            const opts = document.getElementById('voteFormOptions').value.split('\n').map(s => s.trim()).filter(Boolean);
+            if (opts.length < 2) { showToast('กรุณาระบุตัวเลือกอย่างน้อย 2 ตัวเลือก', 'error'); return; }
+            votesData.unshift({
+                id: uid('vt'), title: document.getElementById('voteFormTitle').value, desc: document.getElementById('voteFormDesc').value,
+                deadline: document.getElementById('voteFormDeadline').value, status: 'open', resultsVisible: false, userVoted: null,
+                options: opts.map((label, i) => ({ id: 'o' + (i + 1), label, count: 0 }))
+            });
+            closeModal('modalVoteForm');
+            renderStaffVotes();
+            showToast('สร้างวาระโหวตใหม่เรียบร้อยแล้ว');
+        }
+
+        // ---- Staff: Send notification ----
+        function toggleNotifyTargetInput() {
+            document.getElementById('notifyTargetIdWrap').classList.toggle('hidden', document.getElementById('notifyTargetType').value !== 'one');
+        }
+        function sendStaffNotification(e) {
+            e.preventDefault();
+            const type = document.getElementById('notifyTargetType').value;
+            const title = document.getElementById('notifyTitle').value;
+            const body = document.getElementById('notifyBody').value;
+            const targetId = document.getElementById('notifyTargetId').value.trim();
+            if (type === 'one' && targetId && targetId !== '2536') {
+                // Demo: only member 2536 (current logged-in member) has a visible inbox
+                showToast(`ส่งการแจ้งเตือนถึงรหัสสมาชิก ${targetId} เรียบร้อยแล้ว`);
+            } else {
+                notificationsData.unshift({ id: uid('ntf'), title, body, date: todayStr(), type: 'staff', read: false });
+                updateNotifBadges();
+                showToast(type === 'all' ? 'ส่งการแจ้งเตือนถึงสมาชิกทั้งหมดเรียบร้อยแล้ว' : 'ส่งการแจ้งเตือนถึงสมาชิกเรียบร้อยแล้ว');
+            }
+            e.target.reset();
+            document.getElementById('notifyTargetIdWrap').classList.add('hidden');
+        }
+
+        // ---- Staff / Sysadmin: Member search & profile ----
+        function memberProfileHtml(m) {
+            return `
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-800 to-blue-950 text-white flex items-center justify-center font-bold">${m.name[0]}</div>
+                    <div>
+                        <p class="font-bold text-slate-800 text-sm">${m.name}</p>
+                        <p class="text-xs text-slate-500 mt-1">รหัสสมาชิก ${m.id} • <span class="${m.active ? 'text-emerald-600' : 'text-rose-600'} font-semibold">${m.active ? 'ใช้งานปกติ' : 'ถูกระงับการใช้งาน'}</span></p>
+                        <div class="flex flex-wrap gap-1 mt-1.5">${m.roles.map(r => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${ROLE_BADGE_CLASS[r]}">${ROLE_LABEL[r]}</span>`).join('')}</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center py-3">
+                    <div class="bg-amber-50 rounded-lg p-2"><p class="text-[10px] text-slate-500">หุ้นสะสม</p><p class="text-xs font-bold text-slate-800">${m.shares.toLocaleString()}</p></div>
+                    <div class="bg-blue-50 rounded-lg p-2"><p class="text-[10px] text-slate-500">เงินฝาก</p><p class="text-xs font-bold text-slate-800">${m.deposit.toLocaleString()}</p></div>
+                    <div class="bg-teal-50 rounded-lg p-2"><p class="text-[10px] text-slate-500">เงินกู้คงเหลือ</p><p class="text-xs font-bold text-slate-800">${m.loan.toLocaleString()}</p></div>
+                </div>`;
+        }
+        function renderStaffMemberSearch() {
+            const q = (document.getElementById('staffMemberSearchInput').value || '').trim().toLowerCase();
+            const wrap = document.getElementById('staffMemberSearchResult');
+            const list = q ? membersData.filter(m => m.name.toLowerCase().includes(q) || m.id.includes(q)) : membersData;
+            wrap.innerHTML = list.map(m => `
+                <div class="flex items-center justify-between border border-slate-200 rounded-xl p-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-blue-900 text-white flex items-center justify-center text-xs font-bold">${m.name[0]}</div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">${m.name}</p>
+                            <p class="text-[11px] text-slate-500">รหัส ${m.id} • ${m.roles.map(r => ROLE_LABEL[r]).join(', ')}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="viewMemberProfile('${m.id}')" class="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg transition">ดูข้อมูล</button>
+                        <button onclick="quickNotifyMember('${m.id}')" class="text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-lg transition">ส่งแจ้งเตือน</button>
+                    </div>
+                </div>`).join('') || '<p class="text-xs text-slate-400">ไม่พบสมาชิกที่ค้นหา</p>';
+        }
+        function viewMemberProfile(id) {
+            const m = membersData.find(x => x.id === id); if (!m) return;
+            document.getElementById('memberProfileBody').innerHTML = memberProfileHtml(m);
+            openModal('modalMemberProfile');
+        }
+        function quickNotifyMember(id) {
+            switchStaffTab('notify');
+            document.getElementById('notifyTargetType').value = 'one';
+            toggleNotifyTargetInput();
+            document.getElementById('notifyTargetId').value = id;
+            showToast('เลือกสมาชิกรหัส ' + id + ' สำหรับส่งการแจ้งเตือนแล้ว', 'info');
+        }
+
+        // ==================================================================
+        // ==========================  SYSADMIN  ============================
+        // ==================================================================
+        function renderSysadminUsers() {
+            const q = (document.getElementById('sysadminSearchInput')?.value || '').trim().toLowerCase();
+            const tbody = document.getElementById('sysadminUserTable');
+            if (!tbody) return;
+            const list = q ? membersData.filter(m => m.name.toLowerCase().includes(q) || m.id.includes(q)) : membersData;
+            tbody.innerHTML = list.map(m => `
+                <tr>
+                    <td class="p-3 font-bold text-slate-700">${m.id}</td>
+                    <td class="p-3 text-slate-700 cursor-pointer hover:underline" onclick="viewMemberProfile('${m.id}')">${m.name}</td>
+                    <td class="p-3">
+                        <div class="flex flex-wrap gap-1 max-w-[220px]">
+                            ${Object.keys(ROLE_LABEL).map(r => `
+                                <button onclick="toggleUserRole('${m.id}','${r}')" class="text-[10px] font-bold px-2 py-1 rounded-full border transition ${m.roles.includes(r) ? ROLE_BADGE_CLASS[r] + ' border-transparent' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'}">${m.roles.includes(r) ? '✓ ' : '+ '}${ROLE_LABEL[r]}</button>`).join('')}
+                        </div>
+                    </td>
+                    <td class="p-3"><span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${m.active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${m.active ? 'ใช้งานปกติ' : 'ถูกระงับ'}</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="toggleUserActive('${m.id}')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg transition ${m.active ? 'bg-rose-50 hover:bg-rose-100 text-rose-700' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'}">${m.active ? 'ระงับการใช้งาน' : 'เปิดใช้งาน'}</button>
+                    </td>
+                </tr>`).join('') || '<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">ไม่พบผู้ใช้งานที่ค้นหา</td></tr>';
+            const countEl = document.getElementById('sysadminUserCount');
+            if (countEl) countEl.innerText = membersData.length + ' บัญชี';
+        }
+        function toggleUserRole(id, role) {
+            const m = membersData.find(x => x.id === id); if (!m) return;
+            if (m.roles.includes(role)) {
+                if (m.roles.length === 1) { showToast('ต้องมีอย่างน้อย 1 บทบาทเสมอ', 'error'); return; }
+                m.roles = m.roles.filter(r => r !== role);
+                showToast(`ถอดบทบาท "${ROLE_LABEL[role]}" ออกจาก ${m.name} แล้ว`, 'info');
+            } else {
+                m.roles.push(role);
+                showToast(`เพิ่มบทบาท "${ROLE_LABEL[role]}" ให้ ${m.name} แล้ว`);
+            }
+            renderSysadminUsers();
+        }
+        function toggleUserActive(id) {
+            const m = membersData.find(x => x.id === id); if (!m) return;
+            if (m.active) {
+                openReasonModal(`ระบุเหตุผลที่ระงับการใช้งานของ ${m.name}`, (reason) => {
+                    m.active = false;
+                    renderSysadminUsers();
+                    showToast(`ระงับการใช้งานของ ${m.name} แล้ว`, 'error');
+                });
+            } else {
+                m.active = true;
+                renderSysadminUsers();
+                showToast(`เปิดใช้งานบัญชีของ ${m.name} แล้ว`);
+            }
+        }
+
         // ---- Initialize on page load: show login screen, load coop history ----
         window.onload = function() {
             loadRecentCoops();
+            updateNotifBadges();
         };
-    
-
-        // ============================= SMART COOP ADDITIONS =============================
-        const roleMeta = {
-            member: { label:'สมาชิกสามัญ', cls:'bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' },
-            staff: { label:'เจ้าหน้าที่', cls:'bg-sky-500/20 text-sky-300 border border-sky-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' },
-            executive: { label:'ผู้บริหาร', cls:'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' },
-            systemadmin: { label:'ผู้ดูแลระบบ', cls:'bg-slate-500/30 text-slate-200 border border-slate-400/30 text-[11px] font-semibold px-2 py-0.5 rounded-full' }
-        };
-
-        function setRole(role) {
-            currentRole = role;
-            ['view-member','view-admin','view-staff','view-systemadmin'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
-            const map = { member:'view-member', staff:'view-staff', executive:'view-admin', systemadmin:'view-systemadmin' };
-            document.getElementById(map[role]).classList.remove('hidden');
-            const meta = roleMeta[role];
-            const badge = document.getElementById('roleBadge');
-            badge.innerText = meta.label; badge.className = meta.cls;
-            const label = document.getElementById('roleToggleLabel');
-            label.innerText = 'เปลี่ยนบทบาท';
-            if (role === 'executive' && !adminInitialized) { switchAdminTab('tab1'); adminInitialized = true; }
-            window.scrollTo({ top:0, behavior:'smooth' });
-        }
-        function openRoleMenu(){ document.getElementById('roleMenu').classList.remove('hidden'); }
-        function closeRoleMenu(){ document.getElementById('roleMenu').classList.add('hidden'); }
-        function toggleRole(){
-            const order=['member','staff','executive','systemadmin'];
-            setRole(order[(order.indexOf(currentRole)+1)%order.length]);
-        }
-
-        function setFontScale(scale){
-            const sizes={normal:'16px',large:'19px',xlarge:'22px'};
-            document.documentElement.style.fontSize=sizes[scale];
-            document.querySelectorAll('.font-scale-bar button').forEach(b=>b.classList.remove('active-scale'));
-            document.getElementById('font-scale-'+scale)?.classList.add('active-scale');
-            try { localStorage.setItem('smartcoop_font_scale', scale); } catch(e){}
-        }
-        (function(){ try { const v=localStorage.getItem('smartcoop_font_scale'); if(v) setFontScale(v); } catch(e){} })();
-
-        function openServicePanel(type){
-            const titleMap={news:'ข่าวจากสหกรณ์',alerts:'การแจ้งเตือน',complaints:'เรื่องร้องเรียน',votes:'ระบบโหวต',profile:'ข้อมูลสมาชิก'};
-            document.getElementById('serviceTitle').innerText=titleMap[type]||'ศูนย์บริการสมาชิก';
-            const body=document.getElementById('serviceBody');
-            if(type==='news') body.innerHTML=`<div class="space-y-3">${[
-                ['ประกาศผลการดำเนินงานประจำปี 2568','18 มี.ค. 2568','รายละเอียดผลการดำเนินงานและข้อมูลสำคัญของสหกรณ์'],
-                ['กำหนดการประชุมใหญ่สามัญประจำปี','12 มี.ค. 2568','ขอเชิญสมาชิกเข้าร่วมประชุมใหญ่ตามกำหนดการ'],
-                ['ประกาศอัตราดอกเบี้ยเงินฝากและเงินกู้','05 มี.ค. 2568','อัตราใหม่มีผลสำหรับรายการตั้งแต่วันที่ 1 เมษายน 2568']].map(x=>`<article class="p-4 border rounded-xl"><div class="font-bold text-sm">${x[0]}</div><div class="text-[11px] text-slate-500 mt-1">เผยแพร่ ${x[1]}</div><p class="text-xs text-slate-600 mt-2">${x[2]}</p></article>`).join('')}</div>`;
-            else if(type==='alerts') body.innerHTML=`<div class="space-y-3"><div class="p-4 rounded-xl border border-amber-200 bg-amber-50"><b class="text-sm">เจ้าหน้าที่แจ้งเตือน</b><p class="text-xs mt-2">กรุณาตรวจสอบเอกสารประกอบคำขอของท่านภายในวันที่ 25 มีนาคม 2568</p><div class="text-[11px] text-slate-500 mt-2">วันนี้ 10:25</div></div><div class="p-4 rounded-xl border border-blue-200 bg-blue-50"><b class="text-sm">ระบบ</b><p class="text-xs mt-2">มีรายการโหวตใหม่ที่ท่านมีสิทธิ์ลงคะแนน</p><button onclick="openServicePanel('votes')" class="mt-2 text-xs text-blue-800 font-bold">ไปยังรายการโหวต →</button></div></div>`;
-            else if(type==='complaints') body.innerHTML=`<div class="space-y-4"><div class="flex items-center justify-between"><div><div class="font-bold text-sm">ส่งเรื่องร้องเรียนใหม่</div><div class="text-[11px] text-slate-500">เจ้าหน้าที่จะรับเรื่องและอัปเดตสถานะในหน้านี้</div></div><button onclick="submitComplaint()" class="bg-[#002d56] text-white text-xs font-bold px-3 py-2 rounded-xl">+ ส่งเรื่อง</button></div><div class="p-4 rounded-xl border"><div class="flex justify-between items-start"><div><div class="text-xs text-slate-500">เลขที่ SC-2568-001</div><div class="font-bold text-sm mt-1">ขอชี้แจงรายการหักบัญชี</div></div><span class="px-2 py-1 rounded-full text-[10px] bg-amber-100 text-amber-800">รับเรื่อง</span></div><div class="grid grid-cols-4 gap-1 mt-5 text-[10px] text-center">${['รอ','รับเรื่อง','สำเร็จ','ปิดเรื่อง'].map((x,i)=>`<div class="status-step ${i<2?'done':''}"><div class="status-dot mx-auto w-8 h-8 rounded-full ${i<2?'bg-emerald-500 text-white':'bg-slate-200 text-slate-500'} flex items-center justify-center font-bold">${i<2?'✓':i+1}</div><div class="mt-1">${x}</div></div>`).join('')}</div><div class="mt-4 flex gap-2"><button onclick="cancelComplaint()" class="text-xs border border-rose-300 text-rose-700 px-3 py-2 rounded-lg font-bold">ยกเลิกเรื่อง</button><span class="text-[11px] text-slate-500 py-2">เมื่อยกเลิก ระบบจะบันทึกเหตุผลไว้ในประวัติ</span></div></div></div>`;
-            else if(type==='votes') body.innerHTML=`<div class="space-y-4"><div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/60"><div class="flex justify-between gap-3"><div><div class="text-[11px] text-indigo-700 font-bold">เปิดลงคะแนนถึง 25 มี.ค. 2568</div><div class="font-bold text-sm mt-1">เลือกกรรมการดำเนินการ ชุดที่ 37</div><div class="text-xs text-slate-600 mt-1">เลือกผู้สมัครได้ไม่เกิน 3 คน</div></div><span class="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-bold">กำลังเปิด</span></div><div class="space-y-2 mt-4">${['นายสมชาย ใจดี','นางสาววิภาดา รุ่งเรือง','นายอนันต์ มีสุข','นางสาวกาญจนา ขยันดี'].map((x,i)=>`<label class="flex items-center gap-3 p-3 bg-white rounded-xl border hover:border-indigo-300"><input type="checkbox" name="vote-candidate" value="${i}" class="w-4 h-4" onchange="limitVoteSelection()"><span class="text-xs font-semibold">${x}</span></label>`).join('')}</div><button onclick="submitVote()" class="mt-4 w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-bold">ยืนยันการลงคะแนน</button></div><div class="p-4 rounded-xl border"><div class="font-bold text-sm">รับรองข้อมูลการเงินของสมาชิก</div><div class="text-xs text-slate-500 mt-1">ตัวอย่างรายการโหวตที่สามารถเปิดเป็นรอบได้</div></div></div>`;
-            else if(type==='profile') body.innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs"><div class="p-4 rounded-xl bg-slate-50 border"><div class="text-slate-500">ชื่อ-นามสกุล</div><b>นางสาวปัทมา พุฒวันเพ็ญ</b><div class="text-slate-500 mt-3">รหัสสมาชิก</div><b>2536</b></div><div class="p-4 rounded-xl bg-slate-50 border"><div class="text-slate-500">สถานะสมาชิก</div><b class="text-emerald-700">ปกติ</b><div class="text-slate-500 mt-3">สหกรณ์</div><b>${document.getElementById('headerCoopName').innerText}</b></div></div>`;
-            openModal('modalService');
-        }
-
-        function limitVoteSelection(){ const c=[...document.querySelectorAll('input[name="vote-candidate"]:checked')]; if(c.length>3){c[c.length-1].checked=false; alert('เลือกผู้สมัครได้ไม่เกิน 3 คน');} }
-        function submitVote(){ const n=document.querySelectorAll('input[name="vote-candidate"]:checked').length; if(!n) return alert('กรุณาเลือกผู้สมัครก่อนยืนยันการลงคะแนน'); alert(`ลงคะแนนสำเร็จ ${n} รายการ และบันทึกหลักฐานการลงคะแนนแล้ว`); closeModal('modalService'); }
-        function submitComplaint(){ const subject=prompt('หัวข้อเรื่องร้องเรียน'); if(subject&&subject.trim()){ alert('ส่งเรื่องร้องเรียนสำเร็จ เลขที่ SC-2568-003'); } }
-        function cancelComplaint(){ const reason=prompt('กรุณาระบุเหตุผลที่ยกเลิกเรื่องร้องเรียน'); if(reason&&reason.trim()) alert('ยกเลิกเรื่องร้องเรียนแล้ว และบันทึกเหตุผลเรียบร้อย'); }
-        function downloadMemberPDF(){ document.getElementById('print-member-coop').innerText='สหกรณ์: '+(document.getElementById('headerCoopName')?.innerText||'สหกรณ์'); window.print(); }
-        function downloadCoopPDF(){ window.print(); }
-        function staffAction(action){ alert(action+'\n(ต้นแบบ UI: เชื่อมต่อ API/ฐานข้อมูลในขั้นพัฒนา backend)'); }
-        function searchStaffMember(){ const q=document.getElementById('staffMemberSearch').value.trim(); const el=document.getElementById('staffMemberResult'); if(!q){el.classList.add('hidden'); return;} el.classList.remove('hidden'); el.innerHTML=`<div class="p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="font-bold text-sm">พบสมาชิก: ${q}</div><div class="grid grid-cols-2 gap-3 mt-3 text-xs"><div>ชื่อ <b>นางสาวปัทมา พุฒวันเพ็ญ</b></div><div>สถานะ <b class="text-emerald-700">ปกติ</b></div><div>รหัสสมาชิก <b>2536</b></div><div>แจ้งเตือน <button onclick="staffAction('ส่งแจ้งเตือนถึงสมาชิก 2536')" class="text-amber-700 font-bold">ส่งข้อความ</button></div></div></div>`; }
-        function searchAdminMember(){ const q=document.getElementById('adminMemberSearch').value.trim()||'2536'; const el=document.getElementById('adminMemberResult'); el.innerHTML=`<div class="p-4 rounded-xl border"><div class="flex flex-col md:flex-row md:items-center justify-between gap-3"><div><div class="text-xs text-slate-500">ค้นหา: ${q}</div><div class="font-bold text-sm mt-1">นางสาวปัทมา พุฒวันเพ็ญ • สมาชิก #2536</div><div class="text-[11px] text-slate-500 mt-1">สถานะบัญชี: <span id="accountStatus" class="text-emerald-700 font-bold">Enabled</span></div></div><div class="flex gap-2"><select id="memberRoleSelect" class="text-xs border rounded-lg px-2 py-2"><option>สมาชิก</option><option>เจ้าหน้าที่</option><option>ผู้บริหาร</option><option>ผู้ดูแลระบบ</option></select><button onclick="saveAdminMember()" class="bg-[#002d56] text-white text-xs font-bold px-3 py-2 rounded-lg">บันทึกสิทธิ์</button><button id="accountToggleBtn" onclick="toggleMemberEnabled()" class="border border-rose-300 text-rose-700 text-xs font-bold px-3 py-2 rounded-lg">Disable</button></div></div></div>`; }
-        function saveAdminMember(){ alert('บันทึกสิทธิ์สมาชิกเรียบร้อยแล้ว'); }
-        function toggleMemberEnabled(){ const s=document.getElementById('accountStatus'); const b=document.getElementById('accountToggleBtn'); if(!s)return; const enabled=s.innerText==='Enabled'; s.innerText=enabled?'Disabled':'Enabled'; s.className=enabled?'text-rose-700 font-bold':'text-emerald-700 font-bold'; b.innerText=enabled?'Enable':'Disable'; }
-</script>
+    </script>
 </body>
 </html>
